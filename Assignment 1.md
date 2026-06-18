@@ -221,7 +221,7 @@ You must clearly document each team member’s contribution.
 | --------------------- | -------------------------- | ---------------- |
 | 1  Alan Su            |                            |                  |
 | 2  Alexander Bustillo |                            |                  |
-| 3                     |                            |                  |
+| 3  SenLiang Deng      |                            |                  |
 | 4                     |                            |                  |
 
 
