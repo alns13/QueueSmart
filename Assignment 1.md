@@ -99,13 +99,16 @@ Administrators can create services and define:
 Discuss your initial thoughts on designing QueueSmart:
 
 - Who are the main users of the system?
+    The main users will be any service providing organizations that require placing clients in a queue. Within the organization, there are two types of main users: Administrators and Users. 
     
 - How will users and administrators interact with the application?
-    
+	Administrators have permission to create, manage, and view the status of the entire queue. Users have permission to book appointments, view their position in the queue, see an estimated wait time, and will recieve notifications when they are next to be processed. 
+
 - What are the most important features?
+	Some important features include the actual queueing logic itself, account creation and management, the notification system, user history, user roles, admin roles, and admin servicing management.  
     
 - What challenges do you anticipate (e.g., long queues, notifications, inaccurate wait times)?
-    
+	A challenge that I'm anticipating is creating user and admin roles priveleges. From a security standpoint, users should obviously not be able to execute any actions exclusive to admins. Another challenge that we expect to face could be dynamically changing user priorities in an active queue, and figuring out how those priority changes would affect the rest of the queue. 
 
 ---
 
@@ -217,7 +220,7 @@ You must clearly document each team member’s contribution.
 | Group Member Name | What is your contribution? | Discussion Notes |
 | ----------------- | -------------------------- | ---------------- |
 | 1  Alan Su        |                            |                  |
-| 2  Rabeet Siddiqui|                            |                  |
+| 2                 |                            |                  |
 | 3                 |                            |                  |
 | 4                 |                            |                  |
 
