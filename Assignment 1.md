@@ -217,7 +217,7 @@ You must clearly document each team member’s contribution.
 | Group Member Name | What is your contribution? | Discussion Notes |
 | ----------------- | -------------------------- | ---------------- |
 | 1  Alan Su        |                            |                  |
-| 2                 |                            |                  |
+| 2  Rabeet Siddiqui|                            |                  |
 | 3                 |                            |                  |
 | 4                 |                            |                  |
 
