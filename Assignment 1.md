@@ -217,11 +217,11 @@ You must clearly document each team member’s contribution.
 > **TAs will verify contributions using GitHub history.**  
 > Team members who do not show meaningful contributions will receive a **ZERO**.
 
-| Group Member Name | What is your contribution? | Discussion Notes |
-| ----------------- | -------------------------- | ---------------- |
-| 1  Alan Su        |                            |                  |
-| 2                 |                            |                  |
-| 3                 |                            |                  |
-| 4                 |                            |                  |
+| Group Member Name     | What is your contribution? | Discussion Notes |
+| --------------------- | -------------------------- | ---------------- |
+| 1  Alan Su            |                            |                  |
+| 2  Alexander Bustillo |                            |                  |
+| 3                     |                            |                  |
+| 4                     |                            |                  |
 
 
