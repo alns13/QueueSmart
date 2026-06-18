@@ -117,11 +117,13 @@ Discuss your initial thoughts on designing QueueSmart:
 Discuss the development methodology your team plans to use:
 
 - Which methodology will you follow (e.g., Agile, Scrum, Waterfall)?
+  	We will be using Agile methodology using the Scrum framework. Development will be broken into short sprints.
     
 - Why is this methodology appropriate for this project?
-    
+    Agile is appropriate because requirements may evolve as we build and test. Scrum lets us deliver features incrementally, starting with core functionality like authentication and queuing, then adding notifications and dashboards later.
+  
 - How will this approach help your team work across multiple assignments?
-    
+    Each assignment submission naturally acts as a sprint review, and a shared product backlog will keep the team aligned and work evenly distributed across members.
 
 ---
 
