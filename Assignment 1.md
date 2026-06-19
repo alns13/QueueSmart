@@ -136,7 +136,19 @@ Your response must include:
 - An architecture diagram
     
 - A brief explanation of how the major components interact
+
+![QueueSmart Architecture Diagram](QueueSmart_Diagram.png)
     
+The System Context Diagram shows what is inside QueueSmart and what is outside it. The User and Administrator are external actors who interact with the QueueSmart system. The Notification System is an external system that QueueSmart depends on to send email, SMS, or in-app notifications.
+
+Users interact with QueueSmart by registering, logging in, selecting a service, joining or leaving a queue, booking appointments, checking their queue position, viewing estimated wait time, and receiving notifications when their turn is approaching or when the queue status changes. Queue ordering is based on the time users join the queue and their priority level.
+
+Administrators interact with QueueSmart by logging in, creating and managing services, setting expected service duration, setting service priority levels, adding or removing users from queues, calling the next user, updating queue status, monitoring queue size, and viewing basic usage statistics.
+
+The Notification System interacts with QueueSmart by receiving notification requests from QueueSmart and delivering email, SMS, or in-app notifications to users when their turn is approaching or when the queue status changes.
+
+
+## Main Users of the System
 
 ---
 
