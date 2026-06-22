@@ -108,8 +108,7 @@ Discuss your initial thoughts on designing QueueSmart:
 	Some important features include the actual queueing logic itself, account creation and management, the notification system, user history, user roles, admin roles, and admin servicing management.  
     
 - What challenges do you anticipate (e.g., long queues, notifications, inaccurate wait times)?
-	A challenge that I'm anticipating is creating user and admin roles priveleges. From a security standpoint, users should obviously not be able to execute any actions exclusive to admins. Another challenge that we expect to face could be dynamically changing user priorities in an active queue, and figuring out how those priority changes would affect the rest of the queue. 
-
+	A challenge that I'm anticipating is creating user and admin roles priveleges. From a security standpoint, users should obviously not be able to execute any actions exclusive to admins. Another challenge that we expect to face could be dynamically changing user priorities in an active queue, and figuring out how those priority changes would affect the rest of the queue. Another challenge is keeping estimated wait times accurate. Wait times may change depending on many factors such as how long each service takes, and whether priority users are added to the queue. Finally, another challenge is notification reliability. Users need to recieve notification at the right time, especially when their turn is approaching.
 ---
 
 ### **2. Development Methodology (2 points)**
