@@ -152,7 +152,9 @@ The Notification System interacts with QueueSmart by receiving notification requ
 
 ### Container Diagram
 
+![QueueSmart Container Diagram](QueueSmart-Container-Diagram.png)
 
+The container diagram shows the main internal parts of QueueSmart. The React Frontend Web App is used by users and administrators to interact with the system. The Node.js Backend/API handles the main application logic, including authentication, queue management, role permissions, service management, and wait-time calculations. The backend communicates with the database to store and retrieve information, and it also communicates with the notification component when users need updates. The notification component then sends messages through email, SMS, or in-app notifications.
 
 
 
