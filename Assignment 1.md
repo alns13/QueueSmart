@@ -122,7 +122,11 @@ Discuss the development methodology your team plans to use:
     Agile is appropriate because requirements may evolve as we build and test. Scrum lets us deliver features incrementally, starting with core functionality like authentication and queuing, then adding notifications and dashboards later.
   
 - How will this approach help your team work across multiple assignments?
-    Each assignment submission naturally acts as a sprint review, and a shared product backlog will keep the team aligned and work evenly distributed across members.
+    Each assignment submission naturally acts as a sprint review, and a shared product backlog will keep the team aligned and work evenly distributed across members. Using Scrum also helps our team connect each assignment checkpoint to a clear project goal. This makes the project easier to manage because the team can review feedback after each checkpoint and make improvements before moving to the next part.
+
+  Scrum also gives our team a simple way to organize responsibilities and track progress. Since QueueSmart includes several parts such as login/registration, user roles, queue management, service management, notifications, and history, the team can divide these features into smaller tasks instead of trying to handle the entire system at once. 
+
+  This approach also supports communication between team members. At the end of each checkpoint, the team can review what was completed, discuss what needs to be improved, and decide what should be worked on next. If feedback from the instructor or TA shows that part of the design needs to change, using Agile/Scrum allows the team to adjust the project without restarting the entire plan.
 
 ---
 
@@ -145,6 +149,12 @@ Users interact with QueueSmart by registering, logging in, selecting a service, 
 Administrators interact with QueueSmart by logging in, creating and managing services, setting expected service duration, setting service priority levels, adding or removing users from queues, calling the next user, updating queue status, monitoring queue size, and viewing basic usage statistics.
 
 The Notification System interacts with QueueSmart by receiving notification requests from QueueSmart and delivering email, SMS, or in-app notifications to users when their turn is approaching or when the queue status changes.
+
+### Container Diagram
+
+
+
+
 
 
 ## Main Users of the System
