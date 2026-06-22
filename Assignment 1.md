@@ -174,11 +174,11 @@ You must clearly document each team member’s contribution.
 > **TAs will verify contributions using GitHub history.**  
 > Team members who do not show meaningful contributions will receive a **ZERO**.
 
-| Group Member Name     | What is your contribution? | Discussion Notes |
-| --------------------- | -------------------------- | ---------------- |
-| 1  Alan Su            |                            |                  |
-| 2  Alexander Bustillo |                            |                  |
-| 3  SenLiang Deng      |                            |                  |
-| 4  Rabeet Siddiqui    |                            |                  |
+| Group Member Name     | What is your contribution?                                               | Discussion Notes                                                                                    |
+| --------------------- | ------------------------------------------------------------------------ | --------------------------------------------------------------------------------------------------- |
+| 1  Alan Su            |                            |                                             |                                                                                                     |
+| 2  Alexander Bustillo | Added the container Diagram and expanded development methodology section.| Also added details about scrum task organization, communication, and adapting to checkpoint feedback|
+| 3  SenLiang Deng      |                            |                                             |                                                                                                     |
+| 4  Rabeet Siddiqui    |                            |                                             |                                                                                                     |
 
 
