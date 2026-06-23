@@ -177,7 +177,7 @@ You must clearly document each team member’s contribution.
 | Group Member Name     | What is your contribution?                                               | Discussion Notes                                                                                    |
 | --------------------- | ------------------------------------------------------------------------ | --------------------------------------------------------------------------------------------------- |
 | 1  Alan Su            | Wrote the initial thoughts and general design prompts.                   | Still finalizing our workflow stack. Frontend will likely be React.                                 |
-| 2  Alexander Bustillo | Added the container Diagram and expanded development methodology section.| Also added details about scrum task organization, communication, and adapting to checkpoint feedback|
+| 2  Alexander Bustillo | Added the container Diagram and expanded development methodology section.Also added details about scrum task organization, communication, and adapting to checkpoint feedback| Discussed stack, but it seems we have reached an agreement|
 | 3  SenLiang Deng      | Added and described the System Context Diagram.                          | Discussed and summarized the Context Diagram content.                                               |
 | 4  Rabeet Siddiqui    | Added the development methodology section                                | Group decided on stack requirments and methadologies                                                |
 
