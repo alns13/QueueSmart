@@ -18,9 +18,7 @@ body {
 }
 
 button,
-input,
-select,
-textarea {
+input {
   font: inherit;
 }
 
@@ -33,15 +31,6 @@ button {
   background: #0f766e;
   font-weight: 700;
   cursor: pointer;
-}
-
-button:disabled {
-  cursor: not-allowed;
-  background: #8a94a6;
-}
-
-a {
-  color: inherit;
 }
 
 .auth-screen {
@@ -57,9 +46,6 @@ a {
   border-radius: 8px;
   background: #fff;
   box-shadow: 0 8px 24px rgba(31, 41, 55, .08);
-}
-
-.auth-card {
   width: min(100%, 440px);
   display: grid;
   gap: 16px;
@@ -76,16 +62,9 @@ label {
   font-weight: 700;
 }
 
-input,
-select,
-textarea {
+input {
   width: 100%;
   border: 1px solid #cfd8e3;
   border-radius: 8px;
   padding: 11px 12px;
-}
-
-textarea {
-  min-height: 110px;
-  resize: vertical;
 }
