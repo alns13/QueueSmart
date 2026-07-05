@@ -68,3 +68,50 @@ input {
   border-radius: 8px;
   padding: 11px 12px;
 }
+
+.navbar {
+  width: 240px;
+  height: 100vh;
+  flex-direction: column;
+  background-color: #abb9cd;
+  display: flex;
+  flex-direction: column;
+  position: fixed;
+  top: 0;
+  left: 0;
+  box-shadow: 2px 0 5px rgba(0,0,0,0.1);
+}
+
+.navbar-logo {
+  padding: 20px;
+  text-align: center;
+  border-bottom: 1px solid #2e2e4f;
+}
+
+
+.navbar-links {
+  list-style: none;
+  padding: 20px 0;
+  margin: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.navbar-item {
+  padding: 15px 25px;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  font-size: 16px;
+}
+
+.navbar-item:hover {
+  background-color: #2e2e4f;
+  padding-left: 30px; 
+}
+
+.navbar-item.active {
+  background-color: #4e54c8;
+  border-left: 4px solid #00adf7;
+  font-weight: bold;
+}

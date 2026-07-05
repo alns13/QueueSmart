@@ -10,7 +10,7 @@ export default function Login() {
       event.currentTarget.reportValidity();
       return;
     }
-    navigate("/blank");
+    navigate("/user-dashboard");
   }
 
   return (
