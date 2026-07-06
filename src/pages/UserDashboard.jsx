@@ -11,9 +11,10 @@ import {
   SidebarMenuButton,
   SidebarMenuItem,
   SidebarProvider,
-  SidebarTrigger,
 } from "@/components/ui/sidebar"
 import { HouseIcon, ListIcon, ClockIcon, ChartLineIcon } from "@phosphor-icons/react"
+
+import { QueueStatusCard } from "@/components/ui/dashboard/QueueStatusCard";
 
 const navItems = [
   { title: "Home", icon: HouseIcon },
@@ -50,8 +51,10 @@ export default function UserDashboard() {
             </Sidebar>
 
             <SidebarInset>
-              <div className="p-6">
-                <h1>User Dashboard</h1>
+              <div className="flex flex-1 flex-col gap-6 p-6">
+                <section className="grid min-h-[600px] grid-cols-2 grid-rows-2 gap-4">
+                  <QueueStatusCard />
+                </section>
               </div>
             </SidebarInset>
           </SidebarProvider>
