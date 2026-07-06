@@ -11,6 +11,8 @@
   "dependencies": {
     "@base-ui/react": "^1.6.0",
     "@fontsource-variable/inter": "^5.2.8",
+    "@fontsource-variable/raleway": "^5.2.8",
+    "@phosphor-icons/react": "^2.1.10",
     "@tailwindcss/vite": "^4.3.2",
     "@vitejs/plugin-react": "^5.0.0",
     "class-variance-authority": "^0.7.1",
