@@ -1,4 +1,4 @@
-import React from "react";
+import React, {useState} from "react";
 import {
   Sidebar,
   SidebarContent,
@@ -15,6 +15,7 @@ import {
 import { HouseIcon, ListIcon, ClockIcon, ChartLineIcon } from "@phosphor-icons/react"
 
 import { QueueStatusCard } from "@/components/ui/dashboard/QueueStatusCard";
+import { DetailedQueueStatus } from "@/components/ui/dashboard/DetailedQueueStatus";
 
 const navItems = [
   { title: "Home", icon: HouseIcon },
@@ -24,6 +25,7 @@ const navItems = [
 ]
 
 export default function UserDashboard() {
+  const [activePage, setActivePage] = useState("Home");
   return (
           <SidebarProvider>
             <Sidebar>
@@ -38,7 +40,8 @@ export default function UserDashboard() {
                     <SidebarMenu>
                       {navItems.map((item) => (
                         <SidebarMenuItem key={item.title}>
-                          <SidebarMenuButton tooltip={item.title}>
+                          <SidebarMenuButton tooltip={item.title}
+                            onClick={() => setActivePage(item.title)}>
                             <item.icon />
                             <span>{item.title}</span>
                           </SidebarMenuButton>
@@ -52,8 +55,12 @@ export default function UserDashboard() {
 
             <SidebarInset>
               <div className="flex flex-1 flex-col gap-6 p-6">
-                <section className="grid min-h-[600px] grid-cols-2 grid-rows-2 gap-4">
-                  <QueueStatusCard />
+                <section className="min-h-[600px]">
+                  {activePage === "View Status" ? (
+                    <DetailedQueueStatus />
+                  ) : (
+                    <QueueStatusCard />
+                  )}
                 </section>
               </div>
             </SidebarInset>
