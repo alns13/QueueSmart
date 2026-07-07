@@ -39,6 +39,18 @@ function QueueManagement(){
         >Technical Support</button>
             </div>
 
+            <div className="serving_card">
+                <div>
+                    <span className="serving_customer">Customer: {queueData[selectedService][0]?.name || "No customer"}</span>
+                    <span className="serving">Serving...</span>
+                    <p className="serving_service">Service: {selectedService}</p>
+                    <p>Priority: {queueData[selectedService][0]?.priority || "N/A"}</p>
+                </div>
+
+                <button className="call_next_button">Call Next</button>
+            </div>
+
+
             <div className="queue_card">
                 <h3>{selectedService} Queue</h3>
                 {queueData[selectedService].map((customer,index)=>(

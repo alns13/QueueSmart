@@ -170,6 +170,35 @@
     font-size: 20px;
 }
 
+.serving_card {
+    background-color:rgba(59, 130, 246, 0.05);
+    border-radius: 20px;
+    padding: 25px 30px;
+    margin-bottom: 25px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    border:1px solid rgb(2, 2, 179);
+}
+
+.serving_card h3 {
+    margin-bottom: 10px;
+}
+
+.serving_card p {
+    margin: 5px 0;
+}
+
+.call_next_button {
+    background-color: #2563eb;
+    color: white;
+    border: none;
+    border-radius: 20px;
+    padding: 12px 20px;
+    font-weight: bold;
+    cursor: pointer;
+}
+
 .queue_button{
     font-size: 15px;
     margin-right: 5px;
@@ -297,4 +326,25 @@
 .dashboard_header{
     font-size: 30px;
     margin-bottom: 30px; 
+}
+
+.serving{
+    background-color: black;
+    color: white;
+    border-radius: 20px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: fit-content;
+    padding: 5px 12px;
+    font-size: 12px;
+    margin-left: 20px;
+}
+.serving_customer{
+    font-size: 20px;
+}
+
+.serving_service{
+    font-size: 15px;
+    color: gray;
 }
