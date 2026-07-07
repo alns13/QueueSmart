@@ -74,7 +74,7 @@ button {
   display: grid;
   place-items: center;
   padding: 24px;
-  background: linear-gradient(rgba(15, 118, 110, .82), rgba(15, 118, 110, .64)), url("/QueueSmart-Container-Diagram.png") center / cover;
+  background: linear-gradient(rgba(48, 141, 255, 0.82), rgb(255, 255, 255)), url("/assets/login_background.jpg") center / cover;
 }
 
 .auth-card {
