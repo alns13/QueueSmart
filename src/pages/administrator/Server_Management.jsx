@@ -3,6 +3,53 @@ import { useState } from "react";
 
 function ServerManagement(){
     const [showModal,setShowModal]=useState(false);
+    const [serviceName, setServiceName] = useState("");
+    const [description, setDescription] = useState("");
+    const [serviceTime, setServiceTime] = useState("");
+    const [priority, setPriority] = useState("Normal");
+    const [error, setError] = useState("");
+
+    const handleSaveService = () => {
+        if (serviceName.trim() === "") {
+            setError("Service name is required.");
+            return;
+        }
+
+        if (description.trim() === "") {
+            setError("Description is required.");
+            return;
+        }
+
+        if (serviceTime === "") {
+            setError("Service time is required.");
+            return;
+        }
+
+        if (serviceName.length > 100) {
+            setError("Service name must be 100 characters or less.");
+            return;
+        }
+
+        if (description.length > 150) {
+            setError("Description must be 150 characters or less.");
+            return;
+        }
+
+        if (Number(serviceTime) <= 0) {
+            setError("Service time must be greater than 0.");
+            return;
+        }
+
+        setError("");
+        setShowModal(false);
+
+        console.log({
+            serviceName,
+            description,
+            serviceTime,
+            priority
+        });
+    };
 
     return (
         <div>
@@ -72,15 +119,44 @@ function ServerManagement(){
                     <div className="modal_box">
                         <h2>Add Service</h2>
 
-                        <input type="text" placeholder="Service Name (Max 100 characters)" />
-                        <input type="text" placeholder="Description" />
-                        <input type="number" placeholder="Service Time (minutes)" />
+                        {error && <p className="error_message">{error}</p>}
 
-                        <select>
+                        <input
+                            type="text"
+                            placeholder="Service Name (Max 100 characters)"
+                            value={serviceName}
+                            maxLength={100}
+                            required
+                            onChange={(e) => setServiceName(e.target.value)}
+                        />
+
+                        <input
+                            type="text"
+                            placeholder="Description (Max 150 characters)"
+                            value={description}
+                            maxLength={150}
+                            required
+                            onChange={(e) => setDescription(e.target.value)}
+                        />
+
+                        <input
+                            type="number"
+                            placeholder="Service Time (minutes)"
+                            value={serviceTime}
+                            min="1"
+                            required
+                            onChange={(e) => setServiceTime(e.target.value)}
+                        />
+
+                        <select
+                            value={priority}
+                            onChange={(e) => setPriority(e.target.value)}
+                        >
                             <option>Normal</option>
                             <option>Priority</option>
                             <option>VIP</option>
                         </select>
+
 
                         <div className="modal_buttons">
                             <button 
@@ -90,7 +166,7 @@ function ServerManagement(){
                                 Cancel
                             </button>
 
-                            <button className="servers_button_edit">
+                            <button className="servers_button_edit" onClick={handleSaveService}>
                                 Save
                             </button>
                         </div>
