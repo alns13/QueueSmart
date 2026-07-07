@@ -1,6 +1,10 @@
 import React from "react";
 import { useNavigate } from "react-router-dom";
 
+//this is hard coded admin uid and pw for now
+const ADMIN_UID = "admin@email.com";
+const ADMIN_PW = "admin123";
+
 export default function Login() {
   const navigate = useNavigate();
 
@@ -10,7 +14,18 @@ export default function Login() {
       event.currentTarget.reportValidity();
       return;
     }
-    navigate("/user-dashboard");
+    
+    const formData = new FormData(event.currentTarget);
+    const email = formData.get("email");
+    const password = formData.get("password");
+
+    if (email === ADMIN_UID && password === ADMIN_PW) {
+      sessionStorage.setItem("role", "admin");
+      navigate("/Admin_dashboard");
+    } else {
+      sessionStorage.setItem("role", "user");
+      navigate("/user-dashboard");
+    }
   }
 
   return (
