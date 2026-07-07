@@ -21,7 +21,7 @@ const serviceData = [
 function AdminReport(){
     return (
         <div>
-            <div>
+            <div className="report_header">
                 <h1>Report</h1>
             </div>
             <div className="from1">

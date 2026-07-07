@@ -12,7 +12,7 @@ export default function AdminDashboard() {
     <div className="admin-container">
       <aside className="admin-sidebar">
         <div className="admin-logo">
-          <h2>QueueSmart</h2>
+          <h2 >QueueSmart</h2>
           <p>hardcoded data now</p>
         </div>
 
@@ -55,7 +55,7 @@ export default function AdminDashboard() {
         {activePage === "Dashboard" && (
         <div>
             <div className="Welcome">
-                <h1>Admin Dashboard</h1>
+                <h1 className="dashboard_header">Admin Dashboard</h1>
                 <p>Welcome back, administrator!</p>
             </div>
             <div className="stats">

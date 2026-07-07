@@ -1,9 +1,14 @@
+import { useState } from "react";
+
+
 function ServerManagement(){
+    const [showModal,setShowModal]=useState(false);
+
     return (
         <div>
             <div className="server_header">
                 <h1>Service Management</h1>
-                <button className="servers_button_edit">Add Service</button>
+                <button className="servers_button_edit" onClick={()=>setShowModal(true)}>Add Service</button>
             </div>
             <div className="servers_stats">
                 <div className="card">
@@ -62,7 +67,39 @@ function ServerManagement(){
                 </div>
                 
             </div>
+            {showModal && (
+                <div className="modal_overlay">
+                    <div className="modal_box">
+                        <h2>Add Service</h2>
+
+                        <input type="text" placeholder="Service Name (Max 100 characters)" />
+                        <input type="text" placeholder="Description" />
+                        <input type="number" placeholder="Service Time (minutes)" />
+
+                        <select>
+                            <option>Normal</option>
+                            <option>Priority</option>
+                            <option>VIP</option>
+                        </select>
+
+                        <div className="modal_buttons">
+                            <button 
+                                className="servers_button_delete"
+                                onClick={() => setShowModal(false)}
+                            >
+                                Cancel
+                            </button>
+
+                            <button className="servers_button_edit">
+                                Save
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            )}
+
         </div>
+        
     );
 }
 export default ServerManagement;

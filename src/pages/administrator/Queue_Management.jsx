@@ -22,7 +22,7 @@ function QueueManagement(){
     return(
         <div>
             <div>
-                <h1>Queue Management</h1>
+                <h1 className="queue_header">Queue Management</h1>
             </div>
             <div>
                 <button
