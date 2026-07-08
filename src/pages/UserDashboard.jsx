@@ -12,14 +12,17 @@ import {
   SidebarMenuItem,
   SidebarProvider,
 } from "@/components/ui/sidebar";
-import { HouseIcon, ListIcon, ClockIcon, ChartLineIcon } from "@phosphor-icons/react";
+import { HouseIcon, ListIcon, ClockIcon, ChartLineIcon, BellIcon } from "@phosphor-icons/react";
 
 import { QueueStatusCard } from "@/components/ui/dashboard/QueueStatusCard";
 import { DetailedQueueStatus } from "@/components/ui/dashboard/DetailedQueueStatus";
 import { JoinQueue } from "@/components/ui/dashboard/JoinQueue";
+import { History } from "@/components/ui/dashboard/History";
+import { Notifications } from "@/components/ui/dashboard/Notifications";
 
 const navItems = [
   { title: "Home", icon: HouseIcon },
+  { title: "Notifications", icon: BellIcon },
   { title: "Join Queue", icon: ListIcon },
   { title: "View Status", icon: ChartLineIcon },
   { title: "History", icon: ClockIcon },
@@ -40,17 +43,24 @@ export default function UserDashboard() {
             <SidebarGroupLabel>Navigation</SidebarGroupLabel>
             <SidebarGroupContent>
               <SidebarMenu>
-                {navItems.map((item) => (
-                  <SidebarMenuItem key={item.title}>
-                    <SidebarMenuButton
-                      tooltip={item.title}
-                      onClick={() => setActivePage(item.title)}
-                    >
-                      <item.icon />
-                      <span>{item.title}</span>
-                    </SidebarMenuButton>
-                  </SidebarMenuItem>
-                ))}
+                {navItems.map((item) => {
+                  const isSelected = activePage === item.title;
+
+                  return (
+                    <SidebarMenuItem className= "flex py-0.5" key={item.title}>
+                      <SidebarMenuButton
+                        className="flex items-center py-6"
+                        tooltip={item.title}
+                        isActive={isSelected}
+                        variant={isSelected ? "default" : "outline"}
+                        onClick={() => setActivePage(item.title)}
+                      >
+                        <item.icon />
+                        <span>{item.title}</span>
+                      </SidebarMenuButton>
+                    </SidebarMenuItem>
+                  );
+                })}
               </SidebarMenu>
             </SidebarGroupContent>
           </SidebarGroup>
@@ -64,9 +74,13 @@ export default function UserDashboard() {
               <JoinQueue />
             ) : activePage === "View Status" ? (
               <DetailedQueueStatus />
-            ) : (
+            ) : activePage === "History" ? ( 
+              <History /> 
+            ) : activePage === "Notifications" ? (
+              <Notifications /> 
+            ) :  
               <QueueStatusCard />
-            )}
+          }
           </section>
         </div>
       </SidebarInset>
