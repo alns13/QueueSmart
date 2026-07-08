@@ -15,10 +15,12 @@ import {
 import { HouseIcon, ListIcon, ClockIcon, ChartLineIcon, BellIcon } from "@phosphor-icons/react";
 
 import { QueueStatusCard } from "@/components/ui/dashboard/QueueStatusCard";
+import { NotificationSummary } from "@/components/ui/dashboard/NotificationSummary";
+import { ActiveServices } from "@/components/ui/dashboard/ActiveServices";
+import { Notifications } from "@/components/ui/dashboard/Notifications";
 import { DetailedQueueStatus } from "@/components/ui/dashboard/DetailedQueueStatus";
 import { JoinQueue } from "@/components/ui/dashboard/JoinQueue";
 import { History } from "@/components/ui/dashboard/History";
-import { Notifications } from "@/components/ui/dashboard/Notifications";
 
 const navItems = [
   { title: "Home", icon: HouseIcon },
@@ -78,7 +80,21 @@ export default function UserDashboard() {
       <SidebarInset>
         <div className="flex flex-1 flex-col gap-6 p-6">
           <section className="min-h-[600px]">
-            {activePage === "Join Queue" ? (
+            {activePage === "Home" ? (
+              <section className="grid min-h-[650px] grid-cols-1 gap-4 md:grid-cols-2 xl:grid-cols-12 xl:grid-rows-[auto_1fr]">
+                <div className="md:col-span-2 xl:col-span-12">
+                  <QueueStatusCard />
+                </div>
+
+                <div className="md:col-span-1 xl:col-span-7">
+                  <NotificationSummary />
+                </div>
+
+                <div className="md:col-span-1 xl:col-span-5">
+                  <ActiveServices />
+                </div> 
+              </section> 
+            ) : activePage === "Join Queue" ? (
               <JoinQueue onNotify={addNotification} />
             ) : activePage === "View Status" ? (
               <DetailedQueueStatus onNotify={addNotification} />

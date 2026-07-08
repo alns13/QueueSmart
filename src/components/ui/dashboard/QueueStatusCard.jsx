@@ -17,7 +17,7 @@ import { Badge } from "../badge"
 
   export function QueueStatusCard() {
     return (
-      <Card size="sm">
+      <Card className="w-full">
         <CardHeader>
           <CardTitle>
             Your Queue Status &emsp;
