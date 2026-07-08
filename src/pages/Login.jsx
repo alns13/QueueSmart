@@ -1,5 +1,5 @@
 import React from "react";
-import { useNavigate } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 
 //this is hard coded admin uid and pw for now
 const ADMIN_UID = "admin@email.com";
@@ -49,6 +49,9 @@ export default function Login() {
           />
         </label>
         <button type="submit">Login</button>
+        <p>
+          New user? <Link to="/register">Create an account</Link>
+        </p>
       </form>
     </main>
   );

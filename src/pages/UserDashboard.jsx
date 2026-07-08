@@ -30,6 +30,14 @@ const navItems = [
 
 export default function UserDashboard() {
   const [activePage, setActivePage] = useState("Home");
+  const [notifications, setNotifications] = useState([
+    "Queue update: Admissions Office wait time is currently 28 minutes.",
+    "Status change: You are waiting in the Admissions Office queue.",
+  ]);
+
+  function addNotification(message) {
+    setNotifications((current) => [message, ...current]);
+  }
 
   return (
     <SidebarProvider>
@@ -71,13 +79,13 @@ export default function UserDashboard() {
         <div className="flex flex-1 flex-col gap-6 p-6">
           <section className="min-h-[600px]">
             {activePage === "Join Queue" ? (
-              <JoinQueue />
+              <JoinQueue onNotify={addNotification} />
             ) : activePage === "View Status" ? (
-              <DetailedQueueStatus />
+              <DetailedQueueStatus onNotify={addNotification} />
             ) : activePage === "History" ? ( 
               <History /> 
             ) : activePage === "Notifications" ? (
-              <Notifications /> 
+              <Notifications notifications={notifications} /> 
             ) :  
               <QueueStatusCard />
           }

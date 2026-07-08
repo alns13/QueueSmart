@@ -1,6 +1,7 @@
 import React from "react";
 import { Navigate, Route, Routes } from "react-router-dom";
 import Login from "./pages/Login.jsx";
+import Register from "./pages/Register.jsx";
 import UserDashboard from "./pages/UserDashboard.jsx";
 import Admindashbord from "./pages/administrator/Admin_dashboard.jsx";
 import Queue_Manage from "./pages/administrator/Queue_Management.jsx";
@@ -17,6 +18,7 @@ export default function App() {
     <Routes>
       <Route path="/" element={<Login />} />
       <Route path="/login" element={<Login />} />
+      <Route path="/register" element={<Register />} />
       <Route path="/user-dashboard" element={<UserDashboard />} />
       <Route path="/Admin_dashboard" element={<RequireAdmin><Admindashbord /></RequireAdmin>}/>
       <Route path="/Queue_Management" element={<Queue_Manage />}/>

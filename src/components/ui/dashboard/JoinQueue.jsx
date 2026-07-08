@@ -34,7 +34,7 @@ const services = [
   },
 ];
 
-export function JoinQueue() {
+export function JoinQueue({ onNotify }) {
   const [selectedServiceId, setSelectedServiceId] = useState("");
   const [joinedService, setJoinedService] = useState(null);
   const [message, setMessage] = useState("");
@@ -51,9 +51,13 @@ export function JoinQueue() {
 
     setJoinedService(selectedService);
     setMessage(`You joined the ${selectedService.name} queue.`);
+    onNotify(`Queue update: You joined the ${selectedService.name} queue.`);
   }
 
   function handleLeaveQueue() {
+    if (joinedService) {
+      onNotify(`Queue update: You left the ${joinedService.name} queue.`);
+    }
     setJoinedService(null);
     setSelectedServiceId("");
     setMessage("You have left the queue.");

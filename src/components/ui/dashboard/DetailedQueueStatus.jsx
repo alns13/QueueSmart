@@ -18,7 +18,11 @@ const avgTimePerPerson = 2;
 const progress = Math.round(((totalQueueSize - position) / totalQueueSize) * 100);
 const estimatedWaitTime = totalAhead * avgTimePerPerson;
 
-export function DetailedQueueStatus() {
+export function DetailedQueueStatus({ onNotify }) {
+  function handleStatusChange() {
+    onNotify("Status change: You are almost ready. Please stay nearby.");
+  }
+
   return (
     <div className="w-full max-w-4xl space-y-4">
       <Card>
@@ -94,6 +98,9 @@ export function DetailedQueueStatus() {
               className="[&_[data-slot=progress-track]]:h-4"
             />
           </div>
+          <button type="button" onClick={handleStatusChange}>
+            Simulate Status Change
+          </button>
         </CardContent>
       </Card>
 

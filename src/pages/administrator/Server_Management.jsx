@@ -42,13 +42,6 @@ function ServerManagement(){
 
         setError("");
         setShowModal(false);
-
-        console.log({
-            serviceName,
-            description,
-            serviceTime,
-            priority
-        });
     };
 
     return (
