@@ -1,72 +1,60 @@
 # QueueSmart
 COSC 4353 Class Project
 
-## Assignment 3 Checklist:
+## Assignment 2 Checklist:
 
-1. Authentication Module
+1. Authentication Screens
 
-    User registration
+    Login screen✅
 
-    Login authentication
+    Registration screen
 
-    Role handling (User vs Administrator)
+    Basic client-side validation✅
 
-    Basic input validation
+2. User Screens
+User Dashboard✅
 
-2. Service Management Module
+    Overview of current queue status✅
 
-    Create, update, and list services
+    Active services available
 
-    Each service should include:
+    Notifications summary
 
-        Service name
+Join Queue Screen✅
 
-        Description
+Queue Status Screen✅
 
-        Expected duration
+History Screen
 
-        Priority level
+3. Administrator Screens
+Admin Dashboard✅
 
-3. Queue Management Module
+    List of services✅
 
-    Allow users to:
+    Current queue lengths✅
 
-        Join a queue
+    Quick actions (open/close queue)✅
 
-        Leave a queue
+Service Management Screen✅
 
-    Allow administrators to:
+Queue Management Screen✅
 
-        View current queue
 
-        Serve next user
+4. Notifications
 
-    Queue ordering should consider:
+    Display notifications in the UI for:
 
-        Arrival order
+        Queue updates
 
-        Priority (if applicable)
+        Status changes
 
-4. Wait-Time Estimation Logic
 
-    Implement basic wait-time estimation
+5. UI Validations (Required)
 
-    Can be rule-based (e.g., position × expected duration)
+You must include client-side validations such as:
 
-    No advanced algorithms required
+    Required fields✅
 
-5. Notification Module
+    Field length limits✅
 
-    Backend logic to trigger notifications when:
-
-        User joins a queue
-
-        User is close to being served
-
-    Notifications may be logged or returned to the front end (no real email/SMS required)
-
-6. History Module
-
-    Track queue participation history for users
-
-    History may be stored in memory or mocked
+    Proper input types (email, numbers, dates)✅
