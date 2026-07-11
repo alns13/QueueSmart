@@ -1,60 +1,72 @@
 # QueueSmart
 COSC 4353 Class Project
 
-## Assignment 2 Checklist:
+## Assignment 3 Checklist:
 
-1. Authentication Screens
+1. Authentication Module
 
-    Login screen✅
+    User registration
 
-    Registration screen
+    Login authentication
 
-    Basic client-side validation✅
+    Role handling (User vs Administrator)
 
-2. User Screens
-User Dashboard✅
+    Basic input validation
 
-    Overview of current queue status✅
+2. Service Management Module
 
-    Active services available
+    Create, update, and list services
 
-    Notifications summary
+    Each service should include:
 
-Join Queue Screen✅
+        Service name
 
-Queue Status Screen✅
+        Description
 
-History Screen
+        Expected duration
 
-3. Administrator Screens
-Admin Dashboard✅
+        Priority level
 
-    List of services✅
+3. Queue Management Module
 
-    Current queue lengths✅
+    Allow users to:
 
-    Quick actions (open/close queue)✅
+        Join a queue
 
-Service Management Screen✅
+        Leave a queue
 
-Queue Management Screen✅
+    Allow administrators to:
 
+        View current queue
 
-4. Notifications
+        Serve next user
 
-    Display notifications in the UI for:
+    Queue ordering should consider:
 
-        Queue updates
+        Arrival order
 
-        Status changes
+        Priority (if applicable)
 
+4. Wait-Time Estimation Logic
 
-5. UI Validations (Required)
+    Implement basic wait-time estimation
 
-You must include client-side validations such as:
+    Can be rule-based (e.g., position × expected duration)
 
-    Required fields✅
+    No advanced algorithms required
 
-    Field length limits✅
+5. Notification Module
 
-    Proper input types (email, numbers, dates)✅
+    Backend logic to trigger notifications when:
+
+        User joins a queue
+
+        User is close to being served
+
+    Notifications may be logged or returned to the front end (no real email/SMS required)
+
+6. History Module
+
+    Track queue participation history for users
+
+    History may be stored in memory or mocked
