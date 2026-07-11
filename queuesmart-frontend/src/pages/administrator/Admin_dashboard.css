@@ -1,0 +1,355 @@
+.admin-container {
+  display: flex;
+  min-height: 100vh;
+  background-color: #f4f6f8;
+
+}
+
+.admin-sidebar {
+  width: 230px;
+  background-color: #aab7c8;
+  padding: 20px 0;
+  margin: 10px;
+  border-radius: 20px;
+
+}
+
+.admin-logo {
+  text-align: center;
+  padding: 20px;
+  border-bottom: 1px solid #8d9caf;
+  font-size: 30px;
+}
+
+.admin-logo h2 {
+  margin: 0;
+}
+
+.admin-logo p {
+  margin-top: 8px;
+  font-size: 14px;
+}
+
+.admin-nav {
+  list-style: none;
+  padding: 0;
+  margin: 20px 0 0;
+}
+
+.admin-nav li {
+  padding: 14px 24px;
+  cursor: pointer;
+}
+
+.admin-nav li:hover {
+  background-color: #8f9fb3;
+}
+
+.admin-nav li.active {
+  background-color: #4b50c8;
+  color: white;
+}
+
+.admin-content {
+  flex: 1;
+  padding: 32px;
+  background-color: #eef2f7;
+  margin: 10px;
+  border-radius: 20px;
+}
+.Welcome{
+    margin-bottom: 50px;
+}
+
+.stats{
+    display: grid;
+    gap: 30px;
+    margin-bottom: 50px;
+    grid-template-columns: repeat(4,1fr);
+}
+
+.card{
+    border: 1px solid #eef2f7;
+    border-radius: 20px;
+    padding: 30px 30px;
+    background-color: white;
+}
+.title{
+    font-size: 20px ;
+    color: #656d77;
+    margin-bottom: 20px;
+}
+.number{
+    font-size: 30px;
+    font-weight: bold;
+    margin-bottom: 10px;
+}
+.remark{
+    font-size: small;
+}
+
+.from1{
+    margin-bottom: 150px;
+}
+
+.servers_stats{
+    display: grid;
+    gap: 30px;
+    margin-bottom: 50px;
+    grid-template-columns: repeat(3,1fr);
+}
+
+.divider{
+    border-top: 1px solid #d1d5db;
+    margin: 20px 0;
+}
+
+.server_header{
+    display: flex;
+    align-items: center;
+    width: 100%;
+    justify-content: space-between;
+    font-size: 30px;
+    margin-bottom: 30px;
+}
+
+.servers_title{
+    font-size: 20px;
+    font-weight: lighter;
+}
+
+.servers_describe{
+    font-size: 15px;
+    color: gray;
+}
+
+.servers_time{
+    display: flex;
+    align-items: center;
+    width: 100%;
+    justify-content: space-between;
+    margin-bottom: 25px;
+    font-size: 18px;
+}
+
+.priority{
+    font-size: 18px;
+    margin-bottom: 10px;
+}
+
+.servers_status{
+    display: flex;
+    align-items: center;
+    width: 100%;
+    justify-content: space-between;
+    font-size: 18px;
+}
+
+.servers_button_pause{
+    margin-right: 10px;
+    font-size: 13px;
+    background-color: rgb(226, 148, 4);
+    border-radius: 999px;
+}
+
+.servers_button_edit{
+    margin-right: 10px;
+    font-size: 13px;
+    background-color: 4f46e5(226, 148, 4);
+    border-radius: 999px;
+}
+
+.servers_button_delete{
+    margin-right: 10px;
+    font-size: 13px;
+    background-color:red;
+    border-radius: 999px;
+}
+
+.service_today{
+    font-size: 20px;
+}
+
+.serving_card {
+    background-color:rgba(59, 130, 246, 0.05);
+    border-radius: 20px;
+    padding: 25px 30px;
+    margin-bottom: 25px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    border:1px solid rgb(2, 2, 179);
+}
+
+.serving_card h3 {
+    margin-bottom: 10px;
+}
+
+.serving_card p {
+    margin: 5px 0;
+}
+
+.call_next_button {
+    background-color: #2563eb;
+    color: white;
+    border: none;
+    border-radius: 20px;
+    padding: 12px 20px;
+    font-weight: bold;
+    cursor: pointer;
+}
+
+.queue_button{
+    font-size: 15px;
+    margin-right: 5px;
+    color: #575e66;
+    background-color:transparent ;
+    border:1px solid black;
+    border-radius: 10px;
+    cursor: pointer;
+    margin-bottom: 50px;
+}
+
+.queue_button:hover {
+  background-color: #e2e8f0;
+}
+
+.queue_button.active {
+  background-color: rgb(58, 57, 57);
+  color: white;
+  border-color: rgb(58, 57, 57);
+}
+
+.queue_item{
+    border: 1px solid #eef2f7;
+    border-radius: 20px;
+    padding: 20px 30px;
+    background-color: white;
+    margin-bottom: 10px;
+}
+
+.queue_position{
+    border: 1px solid black;
+    border-radius: 5px;
+    padding: 8px 12px;
+    background-color: white;
+    margin-right: 10px;
+}
+
+.queue_name{
+    font-size: 20px;
+}
+.queue_info{
+    display: flex;
+    align-items: center;
+    width: 100%;
+    justify-content: space-between;
+    margin-bottom: 10px;
+}
+.queue_timebutton{
+    display: flex;
+    align-items: center;
+    width: 100%;
+    justify-content: space-between;
+}
+.queue_managebutton{
+    margin-left: 10px;
+    font-size: 13px;
+    color: #575e66;
+    background-color:transparent ;
+    border:1px solid black;
+    border-radius: 10px;
+    cursor: pointer;
+}
+.queue_priority{
+    background-color: black;
+    color: white;
+    border-radius: 20px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: fit-content;
+    padding: 5px 12px;
+    font-size: 12px;
+}
+
+.modal_overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background-color: rgba(0, 0, 0, 0.4);
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    z-index: 999;
+}
+
+.modal_box {
+    background-color: white;
+    width: 400px;
+    padding: 30px;
+    border-radius: 20px;
+}
+
+.modal_box h2 {
+    margin-bottom: 20px;
+}
+
+.modal_box input,
+.modal_box select {
+    width: 100%;
+    padding: 12px;
+    margin-bottom: 15px;
+    border: 1px solid #ddd;
+    border-radius: 10px;
+    box-sizing: border-box;
+}
+
+.modal_buttons {
+    display: flex;
+    justify-content: flex-end;
+    gap: 10px;
+}
+
+.report_header{
+    font-size: 30px;
+    margin-bottom: 30px;
+}
+
+.queue_header{
+    font-size: 30px;
+    margin-bottom: 30px; 
+}
+
+.dashboard_header{
+    font-size: 30px;
+    margin-bottom: 30px; 
+}
+
+.serving{
+    background-color: black;
+    color: white;
+    border-radius: 20px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: fit-content;
+    padding: 5px 12px;
+    font-size: 12px;
+    margin-left: 20px;
+}
+.serving_customer{
+    font-size: 20px;
+}
+
+.serving_service{
+    font-size: 15px;
+    color: gray;
+}
+.error_message {
+    color: red;
+    font-size: 14px;
+    margin-bottom: 10px;
+}
