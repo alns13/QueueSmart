@@ -49,6 +49,8 @@ GET    /admin/stats
 
 # Mapping
 
+
+
 ### Login / Register
 
 /auth/login, /auth/register
