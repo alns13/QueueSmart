@@ -1,19 +1,26 @@
-# Notes:
+# Auth notes
 
--we should keep things simple and use JWT for auth. 
+Stack decision: Node.js + Express
 
--not sure if we have to hash passwords, but we can use smt like bcrypt or argon
+Libraries:
+- bcrypt for password hashing
+- jsonwebtoken for JWT sign/verify
+- dotenv for env config
+- cors for Vite frontend access
 
--we need to remove all temporary auth and routing protection from the frontend and 
+Endpoints:
+- POST /auth/register
+- POST /auth/login
+- POST /auth/logout
+- GET /auth/me
 
--if we decide to use fastapi, the auth stack will probably be:
-    fastapi-users 
-    SQLAlchemy
-    JWT/bcrypt
+Seeded admin (from .env):
+- email: admin@email.com
+- password: admin123
 
--if we decide to use node.js, the auth stack will probably be:
-    better-auth or passport.js
-    JWT
-    bcrypt
-
--alternatively, we could use supabase auth. (i've never personally used this but ive heard good things from a friend). its super fast to set up and handles basically everything. im kinda down to try this one ngl
+Frontend should:
+1. Call POST /auth/login or /auth/register
+2. Store the returned JWT
+3. Send Authorization: Bearer <token> on protected requests
+4. Call GET /auth/me for role-based routing
+5. On logout, discard the token client-side

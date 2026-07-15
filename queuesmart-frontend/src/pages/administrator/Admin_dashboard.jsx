@@ -1,8 +1,10 @@
 import React, { useState } from "react";
+import { useNavigate } from "react-router-dom";
 import "./Admin_dashboard.css";
 import {
   Sidebar,
   SidebarContent,
+  SidebarFooter,
   SidebarGroup,
   SidebarGroupContent,
   SidebarGroupLabel,
@@ -19,8 +21,10 @@ import {
   ListIcon,
   GearIcon,
   ChartBarIcon,
+  SignOutIcon,
 } from "@phosphor-icons/react";
 
+import { logout } from "@/api/auth.js";
 import AdminReport from "./Admin_Report.jsx";
 import QueueManagement from "./Queue_Management.jsx";
 import ServerManagement from "./Server_Management.jsx";
@@ -33,7 +37,13 @@ const navItems = [
 ];
 
 export default function AdminDashboard() {
+  const navigate = useNavigate();
   const [activePage, setActivePage] = useState("Dashboard");
+
+  async function handleLogout() {
+    await logout();
+    navigate("/login", { replace: true });
+  }
 
   return (
     <SidebarProvider>
@@ -70,6 +80,22 @@ export default function AdminDashboard() {
             </SidebarGroupContent>
           </SidebarGroup>
         </SidebarContent>
+
+        <SidebarFooter>
+          <SidebarMenu>
+            <SidebarMenuItem>
+              <SidebarMenuButton
+                className="flex items-center py-6"
+                tooltip="Logout"
+                variant="outline"
+                onClick={handleLogout}
+              >
+                <SignOutIcon />
+                <span>Logout</span>
+              </SidebarMenuButton>
+            </SidebarMenuItem>
+          </SidebarMenu>
+        </SidebarFooter>
       </Sidebar>
 
       <SidebarInset>

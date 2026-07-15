@@ -1,7 +1,9 @@
 import React, { useState } from "react";
+import { useNavigate } from "react-router-dom";
 import {
   Sidebar,
   SidebarContent,
+  SidebarFooter,
   SidebarGroup,
   SidebarGroupContent,
   SidebarGroupLabel,
@@ -12,8 +14,16 @@ import {
   SidebarMenuItem,
   SidebarProvider,
 } from "@/components/ui/sidebar";
-import { HouseIcon, ListIcon, ClockIcon, ChartLineIcon, BellIcon } from "@phosphor-icons/react";
+import {
+  HouseIcon,
+  ListIcon,
+  ClockIcon,
+  ChartLineIcon,
+  BellIcon,
+  SignOutIcon,
+} from "@phosphor-icons/react";
 
+import { logout } from "@/api/auth.js";
 import { QueueStatusCard } from "@/components/ui/dashboard/QueueStatusCard";
 import { NotificationSummary } from "@/components/ui/dashboard/NotificationSummary";
 import { ActiveServices } from "@/components/ui/dashboard/ActiveServices";
@@ -31,6 +41,7 @@ const navItems = [
 ];
 
 export default function UserDashboard() {
+  const navigate = useNavigate();
   const [activePage, setActivePage] = useState("Home");
   const [notifications, setNotifications] = useState([
     "Queue update: Admissions Office wait time is currently 28 minutes.",
@@ -39,6 +50,11 @@ export default function UserDashboard() {
 
   function addNotification(message) {
     setNotifications((current) => [message, ...current]);
+  }
+
+  async function handleLogout() {
+    await logout();
+    navigate("/login", { replace: true });
   }
 
   return (
@@ -57,7 +73,7 @@ export default function UserDashboard() {
                   const isSelected = activePage === item.title;
 
                   return (
-                    <SidebarMenuItem className= "flex py-0.5" key={item.title}>
+                    <SidebarMenuItem className="flex py-0.5" key={item.title}>
                       <SidebarMenuButton
                         className="flex items-center py-6"
                         tooltip={item.title}
@@ -75,6 +91,22 @@ export default function UserDashboard() {
             </SidebarGroupContent>
           </SidebarGroup>
         </SidebarContent>
+
+        <SidebarFooter>
+          <SidebarMenu>
+            <SidebarMenuItem>
+              <SidebarMenuButton
+                className="flex items-center py-6"
+                tooltip="Logout"
+                variant="outline"
+                onClick={handleLogout}
+              >
+                <SignOutIcon />
+                <span>Logout</span>
+              </SidebarMenuButton>
+            </SidebarMenuItem>
+          </SidebarMenu>
+        </SidebarFooter>
       </Sidebar>
 
       <SidebarInset>
