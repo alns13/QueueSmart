@@ -3,15 +3,15 @@ COSC 4353 Class Project
 
 ## Assignment 3 Checklist:
 
-1. Authentication Module
+1. Authentication Module ✅
 
-    User registration
+    User registration ✅
 
-    Login authentication
+    Login authentication ✅
 
-    Role handling (User vs Administrator)
+    Role handling (User vs Administrator) ✅
 
-    Basic input validation
+    Basic input validation ✅
 
 2. Service Management Module
 
