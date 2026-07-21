@@ -94,7 +94,8 @@ function ServerManagement() {
               <option value="high">High</option>
             </select>
             <div className="modal_buttons">
-              <button type="button" className="servers_button_delete" onClick={() => setShowModal(false)}>Cancel</button>
+              <button type="button" className="servers_button_delete" onClick={() => {setShowModal(false) ; setError("");}}>Cancel</button>
+
               <button type="submit" className="servers_button_edit">Save</button>
             </div>
           </form>

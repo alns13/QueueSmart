@@ -6,6 +6,9 @@ import { requireFields } from "../../middleware/validate.js";
 const router = Router();
 // ponytail: In-memory assignment data; replace with database storage when persistence is required.
 let nextId = 4;
+
+
+
 const services = [
   { id: 1, serviceName: "General Inquiry", description: "General consultation and inquiries", expectedDuration: 15, priority: "low" },
   { id: 2, serviceName: "Service Request", description: "Assistance with various service requests", expectedDuration: 20, priority: "medium" },
@@ -14,16 +17,55 @@ const services = [
 
 function validateService(body = {}) {
   requireFields(body, ["serviceName", "description", "expectedDuration", "priority"]);
+
+
+
+  if (typeof body.serviceName !== "string") {
+    throw createError(400, "Service name must be a string");
+  }
+
+  if (typeof body.description !== "string") {
+    throw createError(400, "Description must be a string");
+  }
+
+  if (typeof body.priority !== "string") {
+    throw createError(400, "Priority must be a string");
+  }
+
   const service = {
-    serviceName: String(body.serviceName).trim(),
-    description: String(body.description).trim(),
+    serviceName: body.serviceName.trim(),
+    description: body.description.trim(),
     expectedDuration: Number(body.expectedDuration),
-    priority: String(body.priority).toLowerCase(),
+    priority: body.priority.toLowerCase(),
   };
+
+  if (!service.serviceName) {
+    throw createError(400, "Service name cannot be empty");
+  }
+
+  if (!/[A-Za-z]/.test(service.serviceName)) {
+    throw createError(
+      400,
+      "Service name must contain at least one letter"
+    );
+  }
+
+  if (!service.description) {
+    throw createError(400, "Description cannot be empty");
+  }
+
+  if (service.description.length > 500) {
+    throw createError(
+      400,
+      "Description must be 500 characters or less"
+    );
+  }
 
   if (service.serviceName.length > 100) throw createError(400, "Service name must be 100 characters or less");
   if (!Number.isFinite(service.expectedDuration) || service.expectedDuration <= 0) throw createError(400, "Expected duration must be greater than 0");
   if (!["low", "medium", "high"].includes(service.priority)) throw createError(400, "Priority must be low, medium, or high");
+
+  
   return service;
 }
 
