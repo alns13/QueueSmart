@@ -122,6 +122,33 @@ queueRouter.get("/:serviceId/estimate", requireAuth, (req, res, next) => {
 
 adminQueueRouter.get("/", requireAdmin, (req, res) => res.json({ queues: services.map(queueResponse) }));
 
+adminQueueRouter.get("/reports/summary", requireAdmin, (req, res) => {
+  const today = new Date().toISOString().slice(0, 10);
+
+  const completedToday = history.filter(
+    (record) =>
+      record.outcome === "Served" &&
+      record.completedAt?.slice(0, 10) === today
+  ).length;
+
+  const serviceData = services.map((service) => ({
+    service: service.serviceName,
+    users: history.filter(
+      (record) =>
+        record.serviceId === service.id &&
+        record.outcome === "Served" &&
+        record.completedAt?.slice(0, 10) === today
+    ).length,
+  }));
+
+  res.json({
+    currentQueue: entries.length,
+    activeStaff: 3,
+    completedToday,
+    serviceData,
+  });
+});
+
 adminQueueRouter.get("/:serviceId", requireAdmin, (req, res, next) => {
   try {
     res.json({ queue: queueResponse(serviceById(req.params.serviceId)) });

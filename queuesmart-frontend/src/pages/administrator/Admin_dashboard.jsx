@@ -1,6 +1,8 @@
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import "./Admin_dashboard.css";
+import { apiRequest } from "@/api/client.js";
+
 import {
   Sidebar,
   SidebarContent,
@@ -39,6 +41,24 @@ const navItems = [
 export default function AdminDashboard() {
   const navigate = useNavigate();
   const [activePage, setActivePage] = useState("Dashboard");
+
+  const [summary, setSummary] = useState({
+    currentQueue: 0,
+    activeStaff: 0,
+    completedToday: 0,
+  });
+
+  useEffect(() => {
+    apiRequest("/admin/queues/reports/summary")
+      .then((data) => {
+        setSummary(data);
+      })
+      .catch((requestError) => {
+        setError(requestError.message);
+      });
+  }, []);
+
+const [error, setError] = useState("");
 
   async function handleLogout() {
     await logout();
@@ -105,21 +125,22 @@ export default function AdminDashboard() {
               <div className="Welcome">
                   <h1 className="dashboard_header">Admin Dashboard</h1>
                   <p>Welcome back, administrator!</p>
+                  {error && <p className="error_message">{error}</p>}
               </div>
               <div className="stats">
                   <div className="card">
                       <div className="title">Current Queue</div>
-                      <div className="number">4</div>
+                      <div className="number">{summary.currentQueue}</div>
                       <div className="remark">Customers currently waiting</div>
                   </div>
                   <div className="card">
                       <div className="title">Active Staff</div>
-                      <div className="number">3</div>
+                      <div className="number">{summary.activeStaff}</div>
                       <div className="remark">Total number of active staff</div>
                   </div>
                   <div className="card">
                       <div className="title">Completed Today</div>
-                      <div className="number">23</div>
+                      <div className="number">{summary.completedToday}</div>
                       <div className="remark">Number of customers served today</div>
                   </div>
                   
