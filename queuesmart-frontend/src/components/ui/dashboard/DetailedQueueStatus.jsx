@@ -1,4 +1,6 @@
 import React from "react";
+import { useEffect, useState } from "react";
+import { apiRequest } from "@/api/client.js";
 
 import {
   Card,
@@ -11,17 +13,46 @@ import {
 import { Progress } from "@/components/ui/progress";
 import { Badge } from "../badge";
 
-const position = 15;
-const totalAhead = 14;
-const totalQueueSize = 20;
-const avgTimePerPerson = 2;
-const progress = Math.round(((totalQueueSize - position) / totalQueueSize) * 100);
-const estimatedWaitTime = totalAhead * avgTimePerPerson;
-
 export function DetailedQueueStatus({ onNotify }) {
+
+const [queueData, setQueueData] = useState(null);
+const [error, setError] = useState("");
+
+useEffect(() => {
+  apiRequest("/waitTime/1")
+    .then((data) => setQueueData(data))
+    .catch((requestError) => setError(requestError.message));
+}, []);
+
   function handleStatusChange() {
     onNotify("Status change: You are almost ready. Please stay nearby.");
   }
+
+  if (error) {
+    return <p>{error}</p>;
+  }
+
+  if (!queueData) {
+    return <p>Loading...</p>;
+  }
+
+  const {
+    serviceName,
+    position,
+    peopleAhead,
+    totalQueueSize,
+    expectedDuration,
+    estimatedWaitTime,
+    status,
+  } = queueData;
+
+  const progress =
+    totalQueueSize > 0
+      ? Math.round(
+          ((totalQueueSize - position) / totalQueueSize) * 100
+        )
+      : 0;
+
 
   return (
     <div className="w-full max-w-4xl space-y-4">
@@ -29,7 +60,7 @@ export function DetailedQueueStatus({ onNotify }) {
         <CardHeader>
           <CardTitle>
             Queue Status &emsp;
-            <Badge variant="default">Waiting</Badge>
+            <Badge variant="default">{status}</Badge>
           </CardTitle>
           <CardDescription>
             Detailed information about your current place in line.
@@ -39,7 +70,7 @@ export function DetailedQueueStatus({ onNotify }) {
         <CardContent className="space-y-6">
           <div>
             <p className="text-sm font-medium text-muted-foreground">Service</p>
-            <p className="text-xl font-semibold">Admissions Office</p>
+            <p className="text-xl font-semibold">{serviceName}</p>
           </div>
 
           <div className="grid grid-cols-2 gap-4">
@@ -59,7 +90,7 @@ export function DetailedQueueStatus({ onNotify }) {
                 <CardDescription>Users waiting before you</CardDescription>
               </CardHeader>
               <CardContent>
-                <p className="text-3xl font-bold">{totalAhead}</p>
+                <p className="text-3xl font-bold">{peopleAhead}</p>
               </CardContent>
             </Card>
 
@@ -116,7 +147,7 @@ export function DetailedQueueStatus({ onNotify }) {
             <div className="rounded-lg border p-4">
                 <div className="mb-1 flex items-center gap-2">
                     <Badge variant="default">Joined</Badge>
-                    <p className="text-sm font-medium">You joined the Admissions Office queue.</p>
+                    <p className="text-sm font-medium">You joined the {serviceName} queue.</p>
                 </div>
                 <p className="text-sm text-muted-foreground">
                 Your place in line has been reserved.
@@ -127,7 +158,7 @@ export function DetailedQueueStatus({ onNotify }) {
                     <div className="mb-1 flex items-center gap-2">
                         <Badge variant="default">Waiting</Badge>
                         <p className="text-sm font-medium">
-                        There are currently {totalAhead} people ahead of you.
+                        There are currently {peopleAhead} people ahead of you.
                         </p>
                     </div>
                     <p className="text-sm text-muted-foreground">
@@ -143,7 +174,7 @@ export function DetailedQueueStatus({ onNotify }) {
                     </p>
                 </div>
                 <p className="text-sm text-muted-foreground">
-                    This estimate is based on an average service time of {avgTimePerPerson} minutes per person.
+                    This estimate is based on an average service time of {expectedDuration} minutes per person.
                 </p>
                 </div>
 

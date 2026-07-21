@@ -7,6 +7,7 @@ import {
 } from "./middleware/errorHandler.js";
 import authRoutes from "./modules/auth/auth.routes.js";
 import serviceRoutes from "./modules/services/service.routes.js";
+import waitTimeRoutes from "./modules/waitTime/waitTime.routes.js";
 
 const app = express();
 
@@ -23,6 +24,7 @@ app.get("/", (req, res) => {
 
 app.use("/auth", authRoutes);
 app.use("/services", serviceRoutes);
+app.use("/waitTime",waitTimeRoutes);
 
 app.use(notFoundHandler);
 app.use(errorHandler);

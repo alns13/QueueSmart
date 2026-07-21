@@ -50,4 +50,5 @@ router.patch("/:serviceId", requireAdmin, (req, res, next) => {
   }
 });
 
+export { services };
 export default router;
