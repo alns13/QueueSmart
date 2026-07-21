@@ -8,6 +8,7 @@ import {
 import authRoutes from "./modules/auth/auth.routes.js";
 import serviceRoutes from "./modules/services/service.routes.js";
 import waitTimeRoutes from "./modules/waitTime/waitTime.routes.js";
+import { adminQueueRouter, historyRouter, notificationRouter, queueRouter } from "./modules/operations/operations.routes.js";
 
 const app = express();
 
@@ -25,6 +26,10 @@ app.get("/", (req, res) => {
 app.use("/auth", authRoutes);
 app.use("/services", serviceRoutes);
 app.use("/waitTime",waitTimeRoutes);
+app.use("/queues", queueRouter);
+app.use("/admin/queues", adminQueueRouter);
+app.use("/notifications", notificationRouter);
+app.use("/history", historyRouter);
 
 app.use(notFoundHandler);
 app.use(errorHandler);

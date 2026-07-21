@@ -7,7 +7,8 @@
     "doc": "docs"
   },
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1",
+    "test": "node --test",
+    "coverage": "node --test --experimental-test-coverage",
     "dev": "nodemon src/server.js",
     "start": "node src/server.js"
   },

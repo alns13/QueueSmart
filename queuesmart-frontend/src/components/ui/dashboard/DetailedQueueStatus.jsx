@@ -1,4 +1,3 @@
-import React from "react";
 import { useEffect, useState } from "react";
 import { apiRequest } from "@/api/client.js";
 
@@ -13,20 +12,16 @@ import {
 import { Progress } from "@/components/ui/progress";
 import { Badge } from "../badge";
 
-export function DetailedQueueStatus({ onNotify }) {
+export function DetailedQueueStatus() {
 
 const [queueData, setQueueData] = useState(null);
 const [error, setError] = useState("");
 
 useEffect(() => {
-  apiRequest("/waitTime/1")
-    .then((data) => setQueueData(data))
+  apiRequest("/queues/me/active")
+    .then((data) => data.entry ? setQueueData(data.entry) : setError("You are not currently in a queue."))
     .catch((requestError) => setError(requestError.message));
 }, []);
-
-  function handleStatusChange() {
-    onNotify("Status change: You are almost ready. Please stay nearby.");
-  }
 
   if (error) {
     return <p>{error}</p>;
@@ -129,9 +124,6 @@ useEffect(() => {
               className="[&_[data-slot=progress-track]]:h-4"
             />
           </div>
-          <button type="button" onClick={handleStatusChange}>
-            Simulate Status Change
-          </button>
         </CardContent>
       </Card>
 

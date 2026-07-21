@@ -43,15 +43,6 @@ const navItems = [
 export default function UserDashboard() {
   const navigate = useNavigate();
   const [activePage, setActivePage] = useState("Home");
-  const [notifications, setNotifications] = useState([
-    "Queue update: Admissions Office wait time is currently 28 minutes.",
-    "Status change: You are waiting in the Admissions Office queue.",
-  ]);
-
-  function addNotification(message) {
-    setNotifications((current) => [message, ...current]);
-  }
-
   async function handleLogout() {
     await logout();
     navigate("/login", { replace: true });
@@ -127,13 +118,13 @@ export default function UserDashboard() {
                 </div> 
               </section> 
             ) : activePage === "Join Queue" ? (
-              <JoinQueue onNotify={addNotification} />
+              <JoinQueue />
             ) : activePage === "View Status" ? (
-              <DetailedQueueStatus onNotify={addNotification} />
+              <DetailedQueueStatus />
             ) : activePage === "History" ? ( 
               <History /> 
             ) : activePage === "Notifications" ? (
-              <Notifications notifications={notifications} /> 
+              <Notifications />
             ) :  
               <QueueStatusCard />
           }
