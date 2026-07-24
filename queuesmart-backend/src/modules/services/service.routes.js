@@ -32,10 +32,14 @@ function validateService(body = {}) {
     throw createError(400, "Priority must be a string");
   }
 
+  if (typeof body.expectedDuration !== "number") {
+    throw createError(400, "Expected duration must be a number");
+  }
+
   const service = {
     serviceName: body.serviceName.trim(),
     description: body.description.trim(),
-    expectedDuration: Number(body.expectedDuration),
+    expectedDuration: body.expectedDuration,
     priority: body.priority.toLowerCase(),
   };
 

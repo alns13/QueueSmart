@@ -141,3 +141,74 @@ async function createUserHeaders(request) {
     assert.equal(response.status, 404);
     assert.equal(response.data.error, "No users are waiting");
   });
+
+  test("service duration must be a number", async (t) => {
+    const request = await startTestServer(t);
+    const adminHeaders = await createAdminHeaders(request);
+
+    const response = await request("/services", {
+      method: "POST",
+      headers: adminHeaders,
+      body: JSON.stringify({
+        serviceName: "Strict Validation",
+        description: "Rejects numeric strings",
+        expectedDuration: "15",
+        priority: "low",
+      }),
+    });
+
+    assert.equal(response.status, 400);
+    assert.equal(response.data.error, "Expected duration must be a number");
+  });
+
+  test("queue orders by priority then arrival", async (t) => {
+    const request = await startTestServer(t);
+    const adminHeaders = await createAdminHeaders(request);
+    const service = await request("/services", {
+      method: "POST",
+      headers: adminHeaders,
+      body: JSON.stringify({
+        serviceName: `Ordering ${Date.now()}`,
+        description: "Queue ordering test",
+        expectedDuration: 10,
+        priority: "low",
+      }),
+    });
+
+    const users = [];
+    for (const priority of ["low", "high", "high"]) {
+      const email = `ordering-${Date.now()}-${Math.random()}@example.com`;
+      const password = "test123";
+      await request("/auth/register", {
+        method: "POST",
+        body: JSON.stringify({ email, password }),
+      });
+      const login = await request("/auth/login", {
+        method: "POST",
+        body: JSON.stringify({ email, password }),
+      });
+      const headers = { Authorization: `Bearer ${login.data.token}` };
+      await request(`/queues/${service.data.service.id}/join`, {
+        method: "POST",
+        headers,
+        body: JSON.stringify({ priority }),
+      });
+      users.push({ email, headers });
+    }
+
+    const queue = await request(`/admin/queues/${service.data.service.id}`, {
+      headers: adminHeaders,
+    });
+
+    assert.deepEqual(
+      queue.data.queue.entries.map((entry) => entry.email),
+      [users[1].email, users[2].email, users[0].email]
+    );
+
+    for (const user of users) {
+      await request(`/queues/${service.data.service.id}/leave`, {
+        method: "DELETE",
+        headers: user.headers,
+      });
+    }
+  });

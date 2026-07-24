@@ -29,7 +29,7 @@ function ServerManagement() {
     try {
       const data = await apiRequest(editingId ? `/services/${editingId}` : "/services", {
         method: editingId ? "PATCH" : "POST",
-        body: JSON.stringify(form),
+        body: JSON.stringify({ ...form, expectedDuration: Number(form.expectedDuration) }),
       });
       setServices((current) => editingId
         ? current.map((service) => service.id === editingId ? data.service : service)
