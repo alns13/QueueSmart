@@ -1,12 +1,19 @@
 # Auth notes
 
-Stack decision: Node.js + Express
+Stack decision: Node.js + Express + Prisma + SQLite
 
 Libraries:
 - bcrypt for password hashing
 - jsonwebtoken for JWT sign/verify
 - dotenv for env config
 - cors for Vite frontend access
+- @prisma/client for database access
+- prisma for migrations / schema
+
+Database:
+- SQLite file at `prisma/dev.db`
+- Users persist across backend restarts
+- Configure with `DATABASE_URL` in `.env`
 
 Endpoints:
 - POST /auth/register
@@ -17,6 +24,11 @@ Endpoints:
 Seeded admin (from .env):
 - email: admin@email.com
 - password: admin123
+
+Useful commands:
+- `npm run db:migrate` — apply schema changes
+- `npm run db:generate` — regenerate Prisma client
+- `npm run db:studio` — browse the SQLite DB in a UI
 
 Frontend should:
 1. Call POST /auth/login or /auth/register

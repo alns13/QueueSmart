@@ -39,7 +39,7 @@ export async function logout(req, res, next) {
 
 export async function me(req, res, next) {
   try {
-    const user = getCurrentUser(req.user.id);
+    const user = await getCurrentUser(req.user.id);
     res.status(200).json({ user });
   } catch (error) {
     next(error);

@@ -1,11 +1,8 @@
 import bcrypt from "bcrypt";
 import env from "../../config/env.js";
+import prisma from "../../db/prisma.js";
 import { createError } from "../../middleware/errorHandler.js";
 import { signToken } from "../../utils/jwt.js";
-
-const users = new Map();
-let nextUserId = 1;
-let seedPromise;
 
 function publicUser(user) {
   return {
@@ -16,62 +13,54 @@ function publicUser(user) {
 }
 
 export async function ensureSeedUsers() {
-  if (!seedPromise) {
-    seedPromise = (async () => {
-      const existing = [...users.values()].find(
-        (user) => user.email === env.adminEmail
-      );
-      if (existing) return;
+  const existing = await prisma.user.findUnique({
+    where: { email: env.adminEmail },
+  });
 
-      const passwordHash = await bcrypt.hash(env.adminPassword, 10);
-      const admin = {
-        id: nextUserId++,
-        email: env.adminEmail,
-        passwordHash,
-        role: "admin",
-        createdAt: new Date().toISOString(),
-      };
-      users.set(admin.id, admin);
-    })();
-  }
+  if (existing) return existing;
 
-  return seedPromise;
+  const passwordHash = await bcrypt.hash(env.adminPassword, 10);
+  return prisma.user.create({
+    data: {
+      email: env.adminEmail,
+      passwordHash,
+      role: "admin",
+    },
+  });
 }
 
-export function findUserById(id) {
-  return users.get(Number(id)) || null;
+export async function findUserById(id) {
+  return prisma.user.findUnique({
+    where: { id: Number(id) },
+  });
 }
 
-export function findUserByEmail(email) {
-  return (
-    [...users.values()].find((user) => user.email === email) || null
-  );
+export async function findUserByEmail(email) {
+  return prisma.user.findUnique({
+    where: { email },
+  });
 }
 
 export async function registerUser({ email, password }) {
-  await ensureSeedUsers();
-
-  if (findUserByEmail(email)) {
+  const existing = await findUserByEmail(email);
+  if (existing) {
     throw createError(409, "Email is already registered");
   }
 
   const passwordHash = await bcrypt.hash(password, 10);
-  const user = {
-    id: nextUserId++,
-    email,
-    passwordHash,
-    role: "user",
-    createdAt: new Date().toISOString(),
-  };
+  const user = await prisma.user.create({
+    data: {
+      email,
+      passwordHash,
+      role: "user",
+    },
+  });
 
-  users.set(user.id, user);
   return publicUser(user);
 }
 
 export async function loginUser({ email, password }) {
-  await ensureSeedUsers();
-
-  const user = findUserByEmail(email);
+  const user = await findUserByEmail(email);
   if (!user) {
     throw createError(401, "Invalid email or password");
   }
@@ -93,8 +82,8 @@ export async function loginUser({ email, password }) {
   };
 }
 
-export function getCurrentUser(userId) {
-  const user = findUserById(userId);
+export async function getCurrentUser(userId) {
+  const user = await findUserById(userId);
   if (!user) {
     throw createError(401, "User not found");
   }

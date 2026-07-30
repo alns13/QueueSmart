@@ -2,7 +2,7 @@ import { verifyToken } from "../utils/jwt.js";
 import { createError } from "./errorHandler.js";
 import { findUserById } from "../modules/auth/auth.service.js";
 
-export function requireAuth(req, res, next) {
+export async function requireAuth(req, res, next) {
   try {
     const header = req.headers.authorization;
 
@@ -22,7 +22,7 @@ export function requireAuth(req, res, next) {
       throw createError(401, "Invalid or expired token");
     }
 
-    const user = findUserById(payload.sub);
+    const user = await findUserById(payload.sub);
     if (!user) {
       throw createError(401, "User not found");
     }
@@ -39,12 +39,21 @@ export function requireAuth(req, res, next) {
   }
 }
 
-export function requireAdmin(req, res, next) {
-  requireAuth(req, res, (err) => {
-    if (err) return next(err);
+export async function requireAdmin(req, res, next) {
+  try {
+    await new Promise((resolve, reject) => {
+      requireAuth(req, res, (err) => {
+        if (err) reject(err);
+        else resolve();
+      });
+    });
+
     if (req.user?.role !== "admin") {
-      return next(createError(403, "Admin access required"));
+      throw createError(403, "Admin access required");
     }
-    return next();
-  });
+
+    next();
+  } catch (error) {
+    next(error);
+  }
 }
