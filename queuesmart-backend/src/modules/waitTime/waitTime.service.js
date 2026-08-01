@@ -1,4 +1,4 @@
-import { services } from "../services/service.routes.js";
+import prisma from "../../db/prisma.js";
 
 export function calculateWaitTime(peopleAhead, expectedDuration) {
   if (!Number.isInteger(peopleAhead) || peopleAhead < 0) {
@@ -16,10 +16,12 @@ export function calculateWaitTime(peopleAhead, expectedDuration) {
   return peopleAhead * expectedDuration;
 }
 
-export function calculateUserWaitTime(serviceId) {
-  const service = services.find(
-    (item) => item.id === Number(serviceId)
-  );
+export async function calculateUserWaitTime(serviceId) {
+  const service = await prisma.service.findUnique({
+    where: {
+      id: Number(serviceId),
+    },
+  });
 
   if (!service) {
     throw new Error("Service not found");

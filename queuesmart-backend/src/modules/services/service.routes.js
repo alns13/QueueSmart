@@ -2,18 +2,12 @@ import { Router } from "express";
 import { requireAdmin, requireAuth } from "../../middleware/auth.js";
 import { createError } from "../../middleware/errorHandler.js";
 import { requireFields } from "../../middleware/validate.js";
+import prisma from "../../db/prisma.js";
+
 
 const router = Router();
 // ponytail: In-memory assignment data; replace with database storage when persistence is required.
-let nextId = 4;
 
-
-
-const services = [
-  { id: 1, serviceName: "General Inquiry", description: "General consultation and inquiries", expectedDuration: 15, priority: "low" },
-  { id: 2, serviceName: "Service Request", description: "Assistance with various service requests", expectedDuration: 20, priority: "medium" },
-  { id: 3, serviceName: "Technical Support", description: "Technical support and consultation", expectedDuration: 10, priority: "high" },
-];
 
 function validateService(body = {}) {
   requireFields(body, ["serviceName", "description", "expectedDuration", "priority"]);
@@ -73,28 +67,75 @@ function validateService(body = {}) {
   return service;
 }
 
-router.get("/", requireAuth, (req, res) => res.json({ services }));
-
-router.post("/", requireAdmin, (req, res, next) => {
+router.get("/", requireAuth, async (req, res, next) => {
   try {
-    const service = { id: nextId++, ...validateService(req.body) };
-    services.push(service);
+    const services = await prisma.service.findMany({
+      orderBy: { id: "asc" },
+    });
+
+    res.json({ services });
+  } catch (error) {
+    next(error);
+  }
+});
+
+
+
+router.post("/", requireAdmin, async (req, res, next) => {
+  try {
+    const service = await prisma.service.create({
+      data: validateService(req.body),
+    });
+
     res.status(201).json({ service });
   } catch (error) {
     next(error);
   }
 });
 
-router.patch("/:serviceId", requireAdmin, (req, res, next) => {
+router.patch("/:serviceId", requireAdmin, async (req, res, next) => {
   try {
-    const service = services.find((item) => item.id === Number(req.params.serviceId));
-    if (!service) throw createError(404, "Service not found");
-    Object.assign(service, validateService(req.body));
+    const serviceId = Number(req.params.serviceId);
+
+    const service = await prisma.service.update({
+      where: { id: serviceId },
+      data: validateService(req.body),
+    });
+
     res.json({ service });
   } catch (error) {
     next(error);
   }
 });
 
-export { services };
+router.delete("/:serviceId", requireAdmin, async (req, res, next) => {
+  try {
+    const serviceId = Number(req.params.serviceId);
+
+    if (!Number.isInteger(serviceId) || serviceId <= 0) {
+      throw createError(400, "Invalid service ID");
+    }
+
+    const existingService = await prisma.service.findUnique({
+      where: { id: serviceId },
+    });
+
+    if (!existingService) {
+      throw createError(404, "Service not found");
+    }
+
+    await prisma.service.delete({
+      where: { id: serviceId },
+    });
+
+    res.status(200).json({
+      message: "Service deleted successfully",
+      service: existingService,
+    });
+  } catch (error) {
+    next(error);
+  }
+});
+
+
 export default router;

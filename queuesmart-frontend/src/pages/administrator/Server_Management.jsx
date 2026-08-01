@@ -40,6 +40,28 @@ function ServerManagement() {
     }
   }
 
+  async function handleDelete(serviceId) {
+    const confirmed = window.confirm(
+      "Are you sure you want to delete this service?"
+    );
+
+    if (!confirmed) return;
+
+    setError("");
+
+    try {
+      await apiRequest(`/services/${serviceId}`, {
+        method: "DELETE",
+      });
+
+      setServices((current) =>
+        current.filter((service) => service.id !== serviceId)
+      );
+    } catch (requestError) {
+      setError(requestError.message);
+    }
+  }
+
   return (
     <div>
       <div className="server_header">
@@ -56,6 +78,7 @@ function ServerManagement() {
             <div className="priority">Priority Level: {service.priority}</div>
             <div className="divider"></div>
             <button className="servers_button_edit" onClick={() => openForm(service)}>Edit</button>
+            <button className="servers_button_delete" onClick={() => handleDelete(service.id)}>Delete</button>
           </div>
         ))}
       </div>
