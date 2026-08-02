@@ -11,6 +11,7 @@ test("registration rejects a non-string email", () => {
       validateRegisterBody({
         email: 12345,
         password: "test123",
+        fullName: "Test User",
       }),
     /Email must be a string/
   );
@@ -28,25 +29,27 @@ test("login rejects a non-string password", () => {
 });
 
 test("registration rejects an email longer than 254 characters", () => {
-    const longEmail = `${"a".repeat(245)}@example.com`;
-  
-    assert.throws(
-      () =>
-        validateRegisterBody({
-          email: longEmail,
-          password: "test123",
-        }),
-      /Email must be 254 characters or less/
-    );
-  });
+  const longEmail = `${"a".repeat(245)}@example.com`;
 
-  test("registration rejects a password longer than 72 characters", () => {
-    assert.throws(
-      () =>
-        validateRegisterBody({
-          email: "user@example.com",
-          password: "a".repeat(73),
-        }),
-      /Password must be 72 characters or less/
-    );
-  });
+  assert.throws(
+    () =>
+      validateRegisterBody({
+        email: longEmail,
+        password: "test123",
+        fullName: "Test User",
+      }),
+    /Email must be 254 characters or less/
+  );
+});
+
+test("registration rejects a password longer than 72 characters", () => {
+  assert.throws(
+    () =>
+      validateRegisterBody({
+        email: "user@example.com",
+        password: "a".repeat(73),
+        fullName: "Test User",
+      }),
+    /Password must be 72 characters or less/
+  );
+});

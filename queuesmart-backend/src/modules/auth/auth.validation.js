@@ -1,5 +1,7 @@
 import { createError } from "../../middleware/errorHandler.js";
 import { requireFields } from "../../middleware/validate.js";
+import { validateRegisterProfileFields } from "../profile/profile.validation.js";
+
 const MAX_EMAIL_LENGTH = 254;
 const MAX_PASSWORD_LENGTH = 72;
 
@@ -18,7 +20,7 @@ function isValidEmail(email) {
 }
 
 export function validateRegisterBody(body = {}) {
-  requireFields(body, ["email", "password"]);
+  requireFields(body, ["email", "password", "fullName"]);
   requireString(body.email, "Email");
   requireString(body.password, "Password");
 
@@ -45,7 +47,9 @@ export function validateRegisterBody(body = {}) {
     throw createError(400, "Password must be at least 6 characters");
   }
 
-  return { email, password };
+  const profile = validateRegisterProfileFields(body);
+
+  return { email, password, ...profile };
 }
 
 export function validateLoginBody(body = {}) {

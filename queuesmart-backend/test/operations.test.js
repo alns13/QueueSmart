@@ -15,7 +15,7 @@ test("user joins and admin serves a queue", async (t) => {
   }
 
   const email = `test-${Date.now()}@example.com`;
-  await request("/auth/register", { method: "POST", body: JSON.stringify({ email, password: "test123" }) });
+  await request("/auth/register", { method: "POST", body: JSON.stringify({ email, password: "test123", fullName: "Ops Tester" }) });
   const userLogin = await request("/auth/login", { method: "POST", body: JSON.stringify({ email, password: "test123" }) });
   const adminLogin = await request("/auth/login", { method: "POST", body: JSON.stringify({ email: "admin@email.com", password: "admin123" }) });
   const userHeaders = { Authorization: `Bearer ${userLogin.data.token}` };

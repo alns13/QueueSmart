@@ -6,6 +6,7 @@ import {
   notFoundHandler,
 } from "./middleware/errorHandler.js";
 import authRoutes from "./modules/auth/auth.routes.js";
+import profileRoutes from "./modules/profile/profile.routes.js";
 import serviceRoutes from "./modules/services/service.routes.js";
 import waitTimeRoutes from "./modules/waitTime/waitTime.routes.js";
 import { adminQueueRouter, historyRouter, notificationRouter, queueRouter } from "./modules/operations/operations.routes.js";
@@ -24,6 +25,7 @@ app.get("/", (req, res) => {
 });
 
 app.use("/auth", authRoutes);
+app.use("/profile", profileRoutes);
 app.use("/services", serviceRoutes);
 app.use("/waitTime",waitTimeRoutes);
 app.use("/queues", queueRouter);

@@ -32,10 +32,10 @@ export function clearSession() {
   sessionStorage.removeItem("role");
 }
 
-export async function register({ email, password }) {
+export async function register({ email, password, fullName, phone }) {
   return apiRequest("/auth/register", {
     method: "POST",
-    body: JSON.stringify({ email, password }),
+    body: JSON.stringify({ email, password, fullName, phone }),
   });
 }
 

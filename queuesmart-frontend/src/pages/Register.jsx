@@ -19,10 +19,17 @@ export default function Register() {
     const formData = new FormData(event.currentTarget);
     const email = String(formData.get("email") || "").trim();
     const password = String(formData.get("password") || "");
+    const fullName = String(formData.get("fullName") || "").trim();
+    const phone = String(formData.get("phone") || "").trim();
 
     setIsSubmitting(true);
     try {
-      await register({ email, password });
+      await register({
+        email,
+        password,
+        fullName,
+        phone: phone || undefined,
+      });
       const { user } = await login({ email, password });
       navigate(user.role === "admin" ? "/Admin_dashboard" : "/user-dashboard", {
         replace: true,
@@ -40,6 +47,18 @@ export default function Register() {
         <h1>QueueSmart Registration</h1>
 
         <label>
+          Full Name
+          <input
+            type="text"
+            name="fullName"
+            placeholder="Ada Lovelace"
+            autoComplete="name"
+            maxLength={100}
+            required
+          />
+        </label>
+
+        <label>
           Email Username
           <input
             type="email"
@@ -47,6 +66,17 @@ export default function Register() {
             placeholder="student@example.edu"
             autoComplete="username"
             required
+          />
+        </label>
+
+        <label>
+          Phone (optional)
+          <input
+            type="tel"
+            name="phone"
+            placeholder="555-0100"
+            autoComplete="tel"
+            maxLength={30}
           />
         </label>
 

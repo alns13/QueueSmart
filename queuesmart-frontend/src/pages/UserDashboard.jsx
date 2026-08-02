@@ -21,6 +21,7 @@ import {
   ChartLineIcon,
   BellIcon,
   SignOutIcon,
+  UserIcon,
 } from "@phosphor-icons/react";
 
 import { logout } from "@/api/auth.js";
@@ -31,9 +32,11 @@ import { Notifications } from "@/components/ui/dashboard/Notifications";
 import { DetailedQueueStatus } from "@/components/ui/dashboard/DetailedQueueStatus";
 import { JoinQueue } from "@/components/ui/dashboard/JoinQueue";
 import { History } from "@/components/ui/dashboard/History";
+import { UserProfile } from "@/components/ui/dashboard/UserProfile";
 
 const navItems = [
   { title: "Home", icon: HouseIcon },
+  { title: "Profile", icon: UserIcon },
   { title: "Notifications", icon: BellIcon },
   { title: "Join Queue", icon: ListIcon },
   { title: "View Status", icon: ChartLineIcon },
@@ -125,6 +128,8 @@ export default function UserDashboard() {
               <History /> 
             ) : activePage === "Notifications" ? (
               <Notifications />
+            ) : activePage === "Profile" ? (
+              <UserProfile />
             ) :  
               <QueueStatusCard />
           }

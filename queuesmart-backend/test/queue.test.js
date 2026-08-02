@@ -46,7 +46,7 @@ async function createUserHeaders(request) {
   
     await request("/auth/register", {
       method: "POST",
-      body: JSON.stringify({ email, password }),
+      body: JSON.stringify({ email, password, fullName: "Queue Tester" }),
     });
   
     const login = await request("/auth/login", {
@@ -181,7 +181,7 @@ async function createUserHeaders(request) {
       const password = "test123";
       await request("/auth/register", {
         method: "POST",
-        body: JSON.stringify({ email, password }),
+        body: JSON.stringify({ email, password, fullName: "Ordering Tester" }),
       });
       const login = await request("/auth/login", {
         method: "POST",
