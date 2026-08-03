@@ -154,17 +154,17 @@ adminQueueRouter.get("/", requireAdmin, async (req, res, next) => {
         id: queue.id,
         serviceId: queue.serviceId,
         serviceName: queue.service.serviceName,
-        entries: queue.entries.map((entry) => ({
+        entries: queue.entries.map((entry, index) => ({
           id: entry.id,
           userId: entry.userId,
           email: entry.user.email,
           name: entry.user.profile?.fullName || entry.user.email,
-          position: entry.position,
+          position: index + 1,
           priority: entry.priority,
           status: entry.status,
           joinedAt: entry.joinedAt,
           estimatedWaitTime:
-            (entry.position - 1) * queue.service.expectedDuration,
+            index * queue.service.expectedDuration,
         })),
       })),
     });
@@ -173,32 +173,62 @@ adminQueueRouter.get("/", requireAdmin, async (req, res, next) => {
   }
 });
 
-adminQueueRouter.get("/reports/summary", requireAdmin, (req, res) => {
-  const today = new Date().toISOString().slice(0, 10);
+adminQueueRouter.get(
+  "/reports/summary",
+  requireAdmin,
+  async (req, res, next) => {
+    try {
+      const activeStaff = await prisma.user.count({
+        where: {
+          role: "admin",
+        },
+      });
 
-  const completedToday = history.filter(
-    (record) =>
-      record.outcome === "Served" &&
-      record.completedAt?.slice(0, 10) === today
-  ).length;
+      const currentQueue = await prisma.queueEntry.count({
+        where: {
+          status: "waiting",
+        },
+      });
 
-  const serviceData = services.map((service) => ({
-    service: service.serviceName,
-    users: history.filter(
-      (record) =>
-        record.serviceId === service.id &&
-        record.outcome === "Served" &&
-        record.completedAt?.slice(0, 10) === today
-    ).length,
-  }));
+      const completedToday = await prisma.queueEntry.count({
+        where: {
+          status: "served",
+        },
+      });
 
-  res.json({
-    currentQueue: entries.length,
-    activeStaff: 3,
-    completedToday,
-    serviceData,
-  });
-});
+      const services = await prisma.service.findMany({
+        include: {
+          queue: {
+            include: {
+              entries: {
+                where: {
+                  status: "served",
+                },
+              },
+            },
+          },
+        },
+        orderBy: {
+          id: "asc",
+        },
+      });
+
+      const serviceData = services.map((service) => ({
+        service: service.serviceName,
+        users: service.queue?.entries.length || 0,
+      }));
+
+      res.json({
+        currentQueue,
+        activeStaff,
+        completedToday,
+        serviceData,
+      });
+    } catch (error) {
+      next(error);
+    }
+  }
+);
 
 adminQueueRouter.get("/:serviceId", requireAdmin, (req, res, next) => {
   try {
