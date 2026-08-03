@@ -30,15 +30,18 @@ test("user joins and admin serves a queue", async (t) => {
 
   const served = await request("/admin/queues/1/serve-next", { method: "POST", headers: adminHeaders });
   assert.equal(served.data.served.email, email);
+  const completed = await request("/admin/queues/1/complete-current", { method: "POST", headers: adminHeaders });
+  assert.equal(completed.status, 200);
 
   const notifications = await request("/notifications", { headers: userHeaders });
   const history = await request("/history/me", { headers: userHeaders });
   assert.ok(notifications.data.notifications.length >= 2);
   assert.equal(history.data.history[0].outcome, "Served");
 
-  const createdService = await request("/services", { method: "POST", headers: adminHeaders, body: JSON.stringify({ serviceName: "Testing", description: "Integration test service", expectedDuration: 12, priority: "medium" }) });
+  const uniqueServiceName = `Testing ${Date.now()}-${Math.random()}`;
+  const createdService = await request("/services", { method: "POST", headers: adminHeaders, body: JSON.stringify({ serviceName: uniqueServiceName, description: "Integration test service", expectedDuration: 12, priority: "medium" }) });
   assert.equal(createdService.status, 201);
-  const updatedService = await request(`/services/${createdService.data.service.id}`, { method: "PATCH", headers: adminHeaders, body: JSON.stringify({ serviceName: "Updated Testing", description: "Updated integration service", expectedDuration: 18, priority: "high" }) });
+  const updatedService = await request(`/services/${createdService.data.service.id}`, { method: "PATCH", headers: adminHeaders, body: JSON.stringify({ serviceName: `Updated ${uniqueServiceName}`, description: "Updated integration service", expectedDuration: 18, priority: "high" }) });
   assert.equal(updatedService.data.service.expectedDuration, 18);
 
   const waitTime = await request("/waitTime/1", { headers: userHeaders });
@@ -57,4 +60,59 @@ test("user joins and admin serves a queue", async (t) => {
   assert.equal(summary.data.left, 1);
   const invalid = await request("/queues/1/join", { method: "POST", headers: userHeaders, body: JSON.stringify({ priority: "invalid" }) });
   assert.equal(invalid.status, 400);
+});
+
+test("queue status, notifications, and history persist in SQLite", async (t) => {
+  const server = app.listen(0);
+  await once(server, "listening");
+  t.after(() => server.close());
+  const baseUrl = `http://127.0.0.1:${server.address().port}`;
+  const request = async (path, options = {}) => {
+    const response = await fetch(`${baseUrl}${path}`, { ...options, headers: { "Content-Type": "application/json", ...(options.headers || {}) } });
+    return { status: response.status, data: await response.json() };
+  };
+
+  const adminLogin = await request("/auth/login", { method: "POST", body: JSON.stringify({ email: "admin@email.com", password: "admin123" }) });
+  const adminHeaders = { Authorization: `Bearer ${adminLogin.data.token}` };
+  const service = await request("/services", {
+    method: "POST",
+    headers: adminHeaders,
+    body: JSON.stringify({ serviceName: `Persistence ${Date.now()}-${Math.random()}`, description: "Persistence integration test", expectedDuration: 5, priority: "low" }),
+  });
+  assert.equal(service.status, 201);
+  const serviceId = service.data.service.id;
+
+  const email = `persistence-${Date.now()}-${Math.random()}@example.com`;
+  await request("/auth/register", { method: "POST", body: JSON.stringify({ email, password: "test123", fullName: "Persistence Tester" }) });
+  const login = await request("/auth/login", { method: "POST", body: JSON.stringify({ email, password: "test123" }) });
+  const userHeaders = { Authorization: `Bearer ${login.data.token}` };
+
+  const closed = await request(`/admin/queues/${serviceId}/status`, { method: "PATCH", headers: adminHeaders, body: JSON.stringify({ status: "closed" }) });
+  assert.equal(closed.status, 200);
+  assert.equal(closed.data.queue.status, "closed");
+  const rejected = await request(`/queues/${serviceId}/join`, { method: "POST", headers: userHeaders, body: "{}" });
+  assert.equal(rejected.status, 409);
+  assert.equal(rejected.data.error, "This queue is closed");
+
+  await request(`/admin/queues/${serviceId}/status`, { method: "PATCH", headers: adminHeaders, body: JSON.stringify({ status: "open" }) });
+  const joined = await request(`/queues/${serviceId}/join`, { method: "POST", headers: userHeaders, body: "{}" });
+  assert.equal(joined.status, 201);
+
+  const notificationList = await request("/notifications", { headers: userHeaders });
+  assert.equal(notificationList.data.notifications[0].status, "sent");
+  const notificationId = notificationList.data.notifications[0].id;
+  const viewed = await request(`/notifications/${notificationId}/read`, { method: "PATCH", headers: userHeaders, body: "{}" });
+  assert.equal(viewed.data.notification.status, "viewed");
+  const summary = await request("/notifications/summary", { headers: userHeaders });
+  assert.equal(summary.data.unreadCount, 0);
+
+  await request(`/queues/${serviceId}/leave`, { method: "DELETE", headers: userHeaders });
+  const history = await request("/history/me", { headers: userHeaders });
+  assert.equal(history.data.history[0].status, "canceled");
+  assert.ok(history.data.history[0].completedAt);
+  const historySummary = await request("/history/me/summary", { headers: userHeaders });
+  assert.equal(historySummary.data.canceled, 1);
+
+  const rejoined = await request(`/queues/${serviceId}/join`, { method: "POST", headers: userHeaders, body: "{}" });
+  assert.equal(rejoined.status, 201);
 });

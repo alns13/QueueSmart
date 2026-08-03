@@ -39,6 +39,7 @@ model User {
   profile      UserProfile?
 
   queueEntries QueueEntry[]
+  notifications Notification[]
 }
 
 model UserProfile {
@@ -54,7 +55,7 @@ model UserProfile {
 
 model Service {
   id               Int      @id @default(autoincrement())
-  serviceName      String
+  serviceName      String   @unique
   description      String
   expectedDuration Int
   priority         Priority @default(low)
@@ -81,10 +82,30 @@ model QueueEntry {
   position Int
   priority Priority         @default(low)
   joinedAt DateTime         @default(now())
+  completedAt DateTime?
   status   QueueEntryStatus @default(waiting)
 
   queue Queue @relation(fields: [queueId], references: [id], onDelete: Cascade)
   user  User  @relation(fields: [userId], references: [id], onDelete: Cascade)
 
-  @@unique([queueId, userId])
+  @@index([queueId, status, position])
+  @@index([userId, status])
+}
+
+enum NotificationStatus {
+  sent
+  viewed
+}
+
+model Notification {
+  id        Int                @id @default(autoincrement())
+  userId    Int
+  type      String             @default("system")
+  message   String
+  timestamp DateTime           @default(now())
+  status    NotificationStatus @default(sent)
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId, timestamp])
 }

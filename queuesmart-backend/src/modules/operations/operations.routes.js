@@ -1,456 +1,298 @@
 import { Router } from "express";
+import prisma from "../../db/prisma.js";
 import { requireAdmin, requireAuth } from "../../middleware/auth.js";
 import { createError } from "../../middleware/errorHandler.js";
-import prisma from "../../db/prisma.js";
-//import { services } from "../services/service.routes.js";
 
 export const queueRouter = Router();
 export const adminQueueRouter = Router();
 export const notificationRouter = Router();
 export const historyRouter = Router();
 
-// ponytail: In-memory assignment state; replace this module with database repositories in Assignment 4.
-const entries = [];
-const notifications = [];
-const history = [];
-let nextEntryId = 1;
-let nextNotificationId = 1;
-let nextHistoryId = 1;
+const activeStatuses = ["waiting", "serving"];
 const priorityWeight = { high: 3, medium: 2, low: 1 };
 
-function serviceById(id) {
-  const service = services.find((item) => item.id === Number(id));
-  if (!service) throw createError(404, "Service not found");
-  return service;
+async function queueForService(serviceId) {
+  const queue = await prisma.queue.findUnique({
+    where: { serviceId: Number(serviceId) },
+    include: { service: true },
+  });
+  if (!queue) throw createError(404, "Service queue not found");
+  return queue;
 }
 
-function queueFor(serviceId) {
-  return entries
-    .filter((entry) => entry.serviceId === Number(serviceId))
-    .sort((a, b) => priorityWeight[b.priority] - priorityWeight[a.priority] || a.joinedAt.localeCompare(b.joinedAt));
+async function orderedEntries(queueId, statuses = activeStatuses) {
+  const entries = await prisma.queueEntry.findMany({
+    where: { queueId, status: { in: statuses } },
+    include: { user: { include: { profile: true } }, queue: { include: { service: true } } },
+    orderBy: [{ position: "asc" }, { joinedAt: "asc" }, { id: "asc" }],
+  });
+  return entries;
 }
 
-function queueEntry(entry) {
-  const service = serviceById(entry.serviceId);
-  const queue = queueFor(entry.serviceId);
-  const position = queue.findIndex((item) => item.id === entry.id) + 1;
+function entryView(entry, index, total) {
+  const service = entry.queue.service;
   return {
-    ...entry,
+    id: entry.id,
+    queueId: entry.queueId,
+    userId: entry.userId,
+    email: entry.user.email,
+    name: entry.user.profile?.fullName || entry.user.email,
+    serviceId: service.id,
     serviceName: service.serviceName,
-    position,
-    peopleAhead: Math.max(position - 1, 0),
-    totalQueueSize: queue.length,
+    position: index + 1,
+    peopleAhead: index,
+    totalQueueSize: total,
+    priority: entry.priority,
+    joinedAt: entry.joinedAt,
+    completedAt: entry.completedAt,
     expectedDuration: service.expectedDuration,
-    estimatedWaitTime: Math.max(position - 1, 0) * service.expectedDuration,
-    status: position <= 2 ? "almost ready" : "waiting",
+    estimatedWaitTime: index * service.expectedDuration,
+    status: entry.status,
   };
 }
 
-function addNotification(userId, type, message) {
-  const notification = { id: nextNotificationId++, userId, type, message, read: false, createdAt: new Date().toISOString() };
-  notifications.unshift(notification);
-  return notification;
+async function addNotification(userId, type, message, tx = prisma) {
+  return tx.notification.create({ data: { userId, type, message, status: "sent" } });
 }
 
-function queueResponse(service) {
-  return { serviceId: service.id, serviceName: service.serviceName, entries: queueFor(service.id).map(queueEntry) };
+async function resequenceQueue(queueId, tx = prisma) {
+  const entries = await tx.queueEntry.findMany({
+    where: { queueId, status: "waiting" },
+    orderBy: [{ joinedAt: "asc" }, { id: "asc" }],
+  });
+  entries.sort((a, b) => priorityWeight[b.priority] - priorityWeight[a.priority] || a.joinedAt - b.joinedAt || a.id - b.id);
+  await Promise.all(entries.map((entry, index) => tx.queueEntry.update({ where: { id: entry.id }, data: { position: index + 1 } })));
 }
 
-queueRouter.post("/:serviceId/join", requireAuth, (req, res, next) => {
+async function queueResponse(queue) {
+  const entries = await orderedEntries(queue.id);
+  return {
+    id: queue.id,
+    serviceId: queue.serviceId,
+    serviceName: queue.service.serviceName,
+    status: queue.status,
+    createdAt: queue.createdAt,
+    entries: entries.map((entry, index) => entryView(entry, index, entries.length)),
+  };
+}
+
+queueRouter.post("/:serviceId/join", requireAuth, async (req, res, next) => {
   try {
-    const service = serviceById(req.params.serviceId);
-    if (entries.some((entry) => entry.userId === req.user.id)) throw createError(409, "You are already in a queue");
+    const queue = await queueForService(req.params.serviceId);
+    if (queue.status !== "open") throw createError(409, "This queue is closed");
     const priority = String(req.body?.priority || "low").toLowerCase();
-    if (!priorityWeight[priority]) throw createError(400, "Priority must be low, medium, or high");
-    const joinedAt = new Date().toISOString();
-    const record = { id: nextHistoryId++, userId: req.user.id, serviceId: service.id, serviceName: service.serviceName, joinedAt, outcome: "Waiting" };
-    history.unshift(record);
-    const entry = { id: nextEntryId++, userId: req.user.id, email: req.user.email, serviceId: service.id, priority, joinedAt, historyId: record.id };
-    entries.push(entry);
-    const result = queueEntry(entry);
-    addNotification(req.user.id, "queue", `You joined the ${service.serviceName} queue.`);
-    if (result.position <= 2) addNotification(req.user.id, "status", `You are almost ready for ${service.serviceName}.`);
-    res.status(201).json({ entry: result });
-  } catch (error) {
-    next(error);
-  }
+    if (!(priority in priorityWeight)) throw createError(400, "Priority must be low, medium, or high");
+    const active = await prisma.queueEntry.findFirst({ where: { userId: req.user.id, status: { in: activeStatuses } } });
+    if (active) throw createError(409, "You are already in a queue");
+
+    const entry = await prisma.$transaction(async (tx) => {
+      const count = await tx.queueEntry.count({ where: { queueId: queue.id, status: "waiting" } });
+      const created = await tx.queueEntry.create({ data: { queueId: queue.id, userId: req.user.id, position: count + 1, priority, status: "waiting" } });
+      await resequenceQueue(queue.id, tx);
+      await addNotification(req.user.id, "queue", `You joined the ${queue.service.serviceName} queue.`, tx);
+      return created;
+    });
+    const entries = await orderedEntries(queue.id);
+    const index = entries.findIndex((item) => item.id === entry.id);
+    res.status(201).json({ entry: entryView(entries[index], index, entries.length) });
+  } catch (error) { next(error); }
 });
 
-queueRouter.delete("/:serviceId/leave", requireAuth, (req, res, next) => {
+queueRouter.delete("/:serviceId/leave", requireAuth, async (req, res, next) => {
   try {
-    const index = entries.findIndex((entry) => entry.userId === req.user.id && entry.serviceId === Number(req.params.serviceId));
-    if (index < 0) throw createError(404, "Active queue entry not found");
-    const [entry] = entries.splice(index, 1);
-    const record = history.find((item) => item.id === entry.historyId);
-    Object.assign(record, { outcome: "Left Queue", completedAt: new Date().toISOString() });
-    addNotification(req.user.id, "queue", `You left the ${serviceById(entry.serviceId).serviceName} queue.`);
-    res.json({ entry: queueEntry({ ...entry }) });
-  } catch (error) {
-    next(error);
-  }
+    const queue = await queueForService(req.params.serviceId);
+    const entry = await prisma.queueEntry.findFirst({ where: { queueId: queue.id, userId: req.user.id, status: { in: activeStatuses } } });
+    if (!entry) throw createError(404, "Active queue entry not found");
+    const canceled = await prisma.$transaction(async (tx) => {
+      const updated = await tx.queueEntry.update({ where: { id: entry.id }, data: { status: "canceled", completedAt: new Date() } });
+      await resequenceQueue(queue.id, tx);
+      await addNotification(req.user.id, "queue", `You left the ${queue.service.serviceName} queue.`, tx);
+      return updated;
+    });
+    res.json({ entry: { ...canceled, serviceId: queue.serviceId, serviceName: queue.service.serviceName } });
+  } catch (error) { next(error); }
 });
 
-queueRouter.get("/me/active", requireAuth, (req, res) => {
-  const entry = entries.find((item) => item.userId === req.user.id);
-  res.json({ entry: entry ? queueEntry(entry) : null });
-});
-
-queueRouter.get("/:serviceId/status", requireAuth, (req, res, next) => {
+queueRouter.get("/me/active", requireAuth, async (req, res, next) => {
   try {
-    const service = serviceById(req.params.serviceId);
-    const queue = queueFor(service.id);
-    res.json({ serviceId: service.id, queueLength: queue.length, estimatedWaitTime: queue.length * service.expectedDuration });
-  } catch (error) {
-    next(error);
-  }
+    const entry = await prisma.queueEntry.findFirst({
+      where: { userId: req.user.id, status: { in: activeStatuses } },
+      include: { user: { include: { profile: true } }, queue: { include: { service: true } } },
+    });
+    if (!entry) return res.json({ entry: null });
+    const entries = await orderedEntries(entry.queueId);
+    const index = entries.findIndex((item) => item.id === entry.id);
+    res.json({ entry: entryView(entries[index], index, entries.length) });
+  } catch (error) { next(error); }
 });
 
-queueRouter.get("/:serviceId/entries/me", requireAuth, (req, res) => {
-  const entry = entries.find((item) => item.userId === req.user.id && item.serviceId === Number(req.params.serviceId));
-  res.json({ entry: entry ? queueEntry(entry) : null });
-});
-
-queueRouter.get("/:serviceId/estimate", requireAuth, (req, res, next) => {
+queueRouter.get("/:serviceId/status", requireAuth, async (req, res, next) => {
   try {
-    const service = serviceById(req.params.serviceId);
-    const entry = entries.find((item) => item.userId === req.user.id && item.serviceId === service.id);
-    const queueLength = queueFor(service.id).length;
-    res.json({ estimatedWaitTime: entry ? queueEntry(entry).estimatedWaitTime : queueLength * service.expectedDuration });
-  } catch (error) {
-    next(error);
-  }
+    const queue = await queueForService(req.params.serviceId);
+    const queueLength = await prisma.queueEntry.count({ where: { queueId: queue.id, status: { in: activeStatuses } } });
+    res.json({ serviceId: queue.serviceId, status: queue.status, queueLength, estimatedWaitTime: queueLength * queue.service.expectedDuration });
+  } catch (error) { next(error); }
+});
+
+queueRouter.get("/:serviceId/entries/me", requireAuth, async (req, res, next) => {
+  try {
+    const queue = await queueForService(req.params.serviceId);
+    const entry = await prisma.queueEntry.findFirst({ where: { queueId: queue.id, userId: req.user.id, status: { in: activeStatuses } } });
+    if (!entry) return res.json({ entry: null });
+    const entries = await orderedEntries(queue.id);
+    const index = entries.findIndex((item) => item.id === entry.id);
+    res.json({ entry: entryView(entries[index], index, entries.length) });
+  } catch (error) { next(error); }
+});
+
+queueRouter.get("/:serviceId/estimate", requireAuth, async (req, res, next) => {
+  try {
+    const queue = await queueForService(req.params.serviceId);
+    const entries = await orderedEntries(queue.id);
+    const index = entries.findIndex((item) => item.userId === req.user.id);
+    res.json({ estimatedWaitTime: (index >= 0 ? index : entries.length) * queue.service.expectedDuration });
+  } catch (error) { next(error); }
 });
 
 adminQueueRouter.get("/", requireAdmin, async (req, res, next) => {
   try {
-    const queues = await prisma.queue.findMany({
-      include: {
-        service: true,
-        entries: {
-          where: {
-            status: {
-              in: ["waiting","serving"],
-              }
-          },
-          include: {
-            user: {
-              include: {
-                profile: true,
-              },
-            },
-          },
-          orderBy: {
-            position: "asc",
-          },
-        },
-      },
-      orderBy: {
-        id: "asc",
-      },
-    });
-
-    res.json({
-      queues: queues.map((queue) => ({
-        id: queue.id,
-        serviceId: queue.serviceId,
-        serviceName: queue.service.serviceName,
-        entries: queue.entries.map((entry, index) => ({
-          id: entry.id,
-          userId: entry.userId,
-          email: entry.user.email,
-          name: entry.user.profile?.fullName || entry.user.email,
-          position: index + 1,
-          priority: entry.priority,
-          status: entry.status,
-          joinedAt: entry.joinedAt,
-          estimatedWaitTime:
-            index * queue.service.expectedDuration,
-        })),
-      })),
-    });
-  } catch (error) {
-    next(error);
-  }
+    const queues = await prisma.queue.findMany({ include: { service: true }, orderBy: { id: "asc" } });
+    res.json({ queues: await Promise.all(queues.map(queueResponse)) });
+  } catch (error) { next(error); }
 });
 
-adminQueueRouter.get(
-  "/reports/summary",
-  requireAdmin,
-  async (req, res, next) => {
-    try {
-      const activeStaff = await prisma.user.count({
-        where: {
-          role: "admin",
-        },
-      });
-
-      const currentQueue = await prisma.queueEntry.count({
-        where: {
-          status: "waiting",
-        },
-      });
-
-      const completedToday = await prisma.queueEntry.count({
-        where: {
-          status: "served",
-        },
-      });
-
-      const services = await prisma.service.findMany({
-        include: {
-          queue: {
-            include: {
-              entries: {
-                where: {
-                  status: "served",
-                },
-              },
-            },
-          },
-        },
-        orderBy: {
-          id: "asc",
-        },
-      });
-
-      const serviceData = services.map((service) => ({
-        service: service.serviceName,
-        users: service.queue?.entries.length || 0,
-      }));
-
-      res.json({
-        currentQueue,
-        activeStaff,
-        completedToday,
-        serviceData,
-      });
-    } catch (error) {
-      next(error);
-    }
-  }
-);
-
-adminQueueRouter.get("/:serviceId", requireAdmin, (req, res, next) => {
+adminQueueRouter.get("/reports/summary", requireAdmin, async (req, res, next) => {
   try {
-    res.json({ queue: queueResponse(serviceById(req.params.serviceId)) });
-  } catch (error) {
-    next(error);
-  }
+    const today = new Date(); today.setHours(0, 0, 0, 0);
+    const [activeStaff, currentQueue, completedToday, services] = await Promise.all([
+      prisma.user.count({ where: { role: "admin" } }),
+      prisma.queueEntry.count({ where: { status: { in: activeStatuses } } }),
+      prisma.queueEntry.count({ where: { status: "served", completedAt: { gte: today } } }),
+      prisma.service.findMany({ include: { queue: true }, orderBy: { id: "asc" } }),
+    ]);
+    const serviceData = await Promise.all(services.map(async (service) => ({ service: service.serviceName, users: service.queue ? await prisma.queueEntry.count({ where: { queueId: service.queue.id, status: "served", completedAt: { gte: today } } }) : 0 })));
+    res.json({ currentQueue, activeStaff, completedToday, serviceData });
+  } catch (error) { next(error); }
 });
 
-adminQueueRouter.post(
-  "/:serviceId/serve-next",
-  requireAdmin,
-  async (req, res, next) => {
-    try {
-      const serviceId = Number(req.params.serviceId);
-
-      const queue = await prisma.queue.findUnique({
-        where: { serviceId },
-        include: {
-          entries: {
-            where: {
-              status: "waiting",
-            },
-            orderBy: {
-              position: "asc",
-            },
-          },
-        },
-      });
-
-      if (!queue) {
-        throw createError(404, "Queue not found");
-      }
-
-      const nextEntry = queue.entries[0];
-
-      if (!nextEntry) {
-        throw createError(404, "No users are waiting");
-      }
-
-      await prisma.$transaction([
-        prisma.queueEntry.updateMany({
-          where: {
-            queueId: queue.id,
-            status: "serving",
-          },
-          data: {
-            status: "served",
-          },
-        }),
-
-        prisma.queueEntry.update({
-          where: {
-            id: nextEntry.id,
-          },
-          data: {
-            status: "serving",
-          },
-        }),
-      ]);
-
-      res.json({
-        message: "Next user is now being served",
-      });
-    } catch (error) {
-      next(error);
-    }
-  }
-);
-
-adminQueueRouter.post(
-  "/:serviceId/complete-current",
-  requireAdmin,
-  async (req, res, next) => {
-    try {
-      const serviceId = Number(req.params.serviceId);
-
-      const queue = await prisma.queue.findUnique({
-        where: { serviceId },
-        include: {
-          entries: {
-            where: {
-              status: "serving",
-            },
-          },
-        },
-      });
-
-      if (!queue) {
-        throw createError(404, "Queue not found");
-      }
-
-      const servingEntry = queue.entries[0];
-
-      if (!servingEntry) {
-        throw createError(404, "No customer is currently being served");
-      }
-
-      const completed = await prisma.queueEntry.update({
-        where: {
-          id: servingEntry.id,
-        },
-        data: {
-          status: "served",
-        },
-      });
-
-      res.json({ completed });
-    } catch (error) {
-      next(error);
-    }
-  }
-);
-
-adminQueueRouter.delete(
-  "/:serviceId/entries/:entryId",
-  requireAdmin,
-  async (req, res, next) => {
-    try {
-      const serviceId = Number(req.params.serviceId);
-      const entryId = Number(req.params.entryId);
-
-      const entry = await prisma.queueEntry.findUnique({
-        where: { id: entryId },
-        include: {
-          queue: true,
-        },
-      });
-
-      if (!entry || entry.queue.serviceId !== serviceId) {
-        throw createError(404, "Queue entry not found");
-      }
-
-      const removed = await prisma.queueEntry.delete({
-        where: { id: entryId },
-      });
-
-      res.json({ removed });
-    } catch (error) {
-      next(error);
-    }
-  }
-);
-
-adminQueueRouter.patch(
-  "/:serviceId/entries/:entryId/move",
-  requireAdmin,
-  async (req, res, next) => {
-    try {
-      const serviceId = Number(req.params.serviceId);
-      const entryId = Number(req.params.entryId);
-      const direction = Number(req.body?.direction);
-
-      if (![-1, 1].includes(direction)) {
-        throw createError(400, "Direction must be -1 or 1");
-      }
-
-      const queue = await prisma.queue.findUnique({
-        where: { serviceId },
-        include: {
-          entries: {
-            where: { status: "waiting" },
-            orderBy: { position: "asc" },
-          },
-        },
-      });
-
-      if (!queue) {
-        throw createError(404, "Queue not found");
-      }
-
-      const index = queue.entries.findIndex(
-        (entry) => entry.id === entryId
-      );
-
-      if (index < 0) {
-        throw createError(404, "Queue entry not found");
-      }
-
-      const targetIndex = index + direction;
-
-      if (targetIndex >= 0 && targetIndex < queue.entries.length) {
-        const currentEntry = queue.entries[index];
-        const targetEntry = queue.entries[targetIndex];
-
-        await prisma.$transaction([
-          prisma.queueEntry.update({
-            where: { id: currentEntry.id },
-            data: { position: targetEntry.position },
-          }),
-          prisma.queueEntry.update({
-            where: { id: targetEntry.id },
-            data: { position: currentEntry.position },
-          }),
-        ]);
-      }
-
-      res.json({ message: "Queue entry moved" });
-    } catch (error) {
-      next(error);
-    }
-  }
-);
-
-notificationRouter.get("/", requireAuth, (req, res) => res.json({ notifications: notifications.filter((item) => item.userId === req.user.id) }));
-notificationRouter.get("/summary", requireAuth, (req, res) => {
-  const userNotifications = notifications.filter((item) => item.userId === req.user.id);
-  res.json({ notifications: userNotifications.slice(0, 5), unreadCount: userNotifications.filter((item) => !item.read).length });
-});
-notificationRouter.patch("/:notificationId/read", requireAuth, (req, res, next) => {
-  const notification = notifications.find((item) => item.id === Number(req.params.notificationId) && item.userId === req.user.id);
-  if (!notification) return next(createError(404, "Notification not found"));
-  notification.read = true;
-  res.json({ notification });
-});
-notificationRouter.patch("/read-all", requireAuth, (req, res) => {
-  notifications.filter((item) => item.userId === req.user.id).forEach((item) => { item.read = true; });
-  res.json({ message: "Notifications marked as read" });
+adminQueueRouter.get("/:serviceId", requireAdmin, async (req, res, next) => {
+  try { res.json({ queue: await queueResponse(await queueForService(req.params.serviceId)) }); }
+  catch (error) { next(error); }
 });
 
-historyRouter.get("/me", requireAuth, (req, res) => res.json({ history: history.filter((item) => item.userId === req.user.id) }));
-historyRouter.get("/me/summary", requireAuth, (req, res) => {
-  const records = history.filter((item) => item.userId === req.user.id);
-  res.json({ total: records.length, served: records.filter((item) => item.outcome === "Served").length, left: records.filter((item) => item.outcome === "Left Queue").length });
+adminQueueRouter.patch("/:serviceId/status", requireAdmin, async (req, res, next) => {
+  try {
+    const status = String(req.body?.status || "").toLowerCase();
+    if (!["open", "closed"].includes(status)) throw createError(400, "Status must be open or closed");
+    const queue = await queueForService(req.params.serviceId);
+    const updated = await prisma.queue.update({ where: { id: queue.id }, data: { status }, include: { service: true } });
+    res.json({ queue: await queueResponse(updated) });
+  } catch (error) { next(error); }
+});
+
+adminQueueRouter.post("/:serviceId/serve-next", requireAdmin, async (req, res, next) => {
+  try {
+    const queue = await queueForService(req.params.serviceId);
+    const waiting = await orderedEntries(queue.id, ["waiting"]);
+    if (!waiting.length) throw createError(404, "No users are waiting");
+    await prisma.$transaction(async (tx) => {
+      await tx.queueEntry.updateMany({ where: { queueId: queue.id, status: "serving" }, data: { status: "served", completedAt: new Date() } });
+      await tx.queueEntry.update({ where: { id: waiting[0].id }, data: { status: "serving", position: 1 } });
+      await addNotification(waiting[0].userId, "status", `You are now being served by ${queue.service.serviceName}.`, tx);
+      await resequenceQueue(queue.id, tx);
+    });
+    res.json({ served: entryView(waiting[0], 0, waiting.length), message: "Next user is now being served" });
+  } catch (error) { next(error); }
+});
+
+adminQueueRouter.post("/:serviceId/complete-current", requireAdmin, async (req, res, next) => {
+  try {
+    const queue = await queueForService(req.params.serviceId);
+    const entry = await prisma.queueEntry.findFirst({ where: { queueId: queue.id, status: "serving" } });
+    if (!entry) throw createError(404, "No customer is currently being served");
+    const completed = await prisma.$transaction(async (tx) => {
+      const result = await tx.queueEntry.update({ where: { id: entry.id }, data: { status: "served", completedAt: new Date() } });
+      await addNotification(entry.userId, "status", `Your ${queue.service.serviceName} service is complete.`, tx);
+      return result;
+    });
+    res.json({ completed });
+  } catch (error) { next(error); }
+});
+
+adminQueueRouter.delete("/:serviceId/entries/:entryId", requireAdmin, async (req, res, next) => {
+  try {
+    const queue = await queueForService(req.params.serviceId);
+    const entry = await prisma.queueEntry.findFirst({ where: { id: Number(req.params.entryId), queueId: queue.id, status: { in: activeStatuses } } });
+    if (!entry) throw createError(404, "Queue entry not found");
+    const removed = await prisma.$transaction(async (tx) => {
+      const result = await tx.queueEntry.update({ where: { id: entry.id }, data: { status: "canceled", completedAt: new Date() } });
+      await resequenceQueue(queue.id, tx);
+      await addNotification(entry.userId, "status", `You were removed from the ${queue.service.serviceName} queue.`, tx);
+      return result;
+    });
+    res.json({ removed });
+  } catch (error) { next(error); }
+});
+
+adminQueueRouter.patch("/:serviceId/entries/:entryId/move", requireAdmin, async (req, res, next) => {
+  try {
+    const direction = Number(req.body?.direction);
+    if (![-1, 1].includes(direction)) throw createError(400, "Direction must be -1 or 1");
+    const queue = await queueForService(req.params.serviceId);
+    const entries = await orderedEntries(queue.id, ["waiting"]);
+    const index = entries.findIndex((entry) => entry.id === Number(req.params.entryId));
+    if (index < 0) throw createError(404, "Queue entry not found");
+    const target = index + direction;
+    if (target >= 0 && target < entries.length) await prisma.$transaction([
+      prisma.queueEntry.update({ where: { id: entries[index].id }, data: { position: entries[target].position } }),
+      prisma.queueEntry.update({ where: { id: entries[target].id }, data: { position: entries[index].position } }),
+    ]);
+    res.json({ queue: await queueResponse(queue) });
+  } catch (error) { next(error); }
+});
+
+notificationRouter.get("/", requireAuth, async (req, res, next) => {
+  try { res.json({ notifications: await prisma.notification.findMany({ where: { userId: req.user.id }, orderBy: { timestamp: "desc" } }) }); }
+  catch (error) { next(error); }
+});
+notificationRouter.get("/summary", requireAuth, async (req, res, next) => {
+  try {
+    const [notifications, unreadCount] = await Promise.all([
+      prisma.notification.findMany({ where: { userId: req.user.id }, orderBy: { timestamp: "desc" }, take: 5 }),
+      prisma.notification.count({ where: { userId: req.user.id, status: "sent" } }),
+    ]);
+    res.json({ notifications, unreadCount });
+  } catch (error) { next(error); }
+});
+notificationRouter.patch("/read-all", requireAuth, async (req, res, next) => {
+  try { await prisma.notification.updateMany({ where: { userId: req.user.id, status: "sent" }, data: { status: "viewed" } }); res.json({ message: "Notifications marked as viewed" }); }
+  catch (error) { next(error); }
+});
+notificationRouter.patch("/:notificationId/read", requireAuth, async (req, res, next) => {
+  try {
+    const notification = await prisma.notification.findFirst({ where: { id: Number(req.params.notificationId), userId: req.user.id } });
+    if (!notification) throw createError(404, "Notification not found");
+    res.json({ notification: await prisma.notification.update({ where: { id: notification.id }, data: { status: "viewed" } }) });
+  } catch (error) { next(error); }
+});
+
+function historyView(entry) {
+  const outcome = entry.status === "served" ? "Served" : entry.status === "canceled" ? "Canceled" : entry.status === "serving" ? "Serving" : "Waiting";
+  return { id: entry.id, userId: entry.userId, serviceId: entry.queue.service.id, serviceName: entry.queue.service.serviceName, joinedAt: entry.joinedAt, completedAt: entry.completedAt, status: entry.status, outcome };
+}
+historyRouter.get("/me", requireAuth, async (req, res, next) => {
+  try {
+    const entries = await prisma.queueEntry.findMany({ where: { userId: req.user.id }, include: { queue: { include: { service: true } } }, orderBy: { joinedAt: "desc" } });
+    res.json({ history: entries.map(historyView) });
+  } catch (error) { next(error); }
+});
+historyRouter.get("/me/summary", requireAuth, async (req, res, next) => {
+  try {
+    const [total, served, canceled] = await Promise.all([
+      prisma.queueEntry.count({ where: { userId: req.user.id } }),
+      prisma.queueEntry.count({ where: { userId: req.user.id, status: "served" } }),
+      prisma.queueEntry.count({ where: { userId: req.user.id, status: "canceled" } }),
+    ]);
+    res.json({ total, served, left: canceled, canceled });
+  } catch (error) { next(error); }
 });

@@ -44,6 +44,21 @@ function QueueManagement() {
       <div>
         {queues.map((queue) => <button key={queue.serviceId} className={selectedServiceId === queue.serviceId ? "queue_button active" : "queue_button"} onClick={() => setSelectedServiceId(queue.serviceId)}>{queue.serviceName}</button>)}
       </div>
+      {selectedQueue && (
+        <div className="my-4 flex items-center gap-3">
+          <strong>Queue status: {selectedQueue.status}</strong>
+          <button
+            className="queue_managebutton"
+            onClick={() => runAction(
+              `/admin/queues/${selectedServiceId}/status`,
+              { method: "PATCH", body: JSON.stringify({ status: selectedQueue.status === "open" ? "closed" : "open" }) },
+              `Queue ${selectedQueue.status === "open" ? "closed" : "opened"}.`
+            )}
+          >
+            {selectedQueue.status === "open" ? "Close Queue" : "Open Queue"}
+          </button>
+        </div>
+      )}
       {notice && <p className="error_message" aria-live="polite">{notice}</p>}
 
 

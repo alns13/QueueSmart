@@ -7,8 +7,8 @@
     "doc": "docs"
   },
   "scripts": {
-    "test": "node --test",
-    "coverage": "node --test --experimental-test-coverage",
+    "test": "node scripts/reset-test-db.js && node --test --test-concurrency=1",
+    "coverage": "node scripts/reset-test-db.js && node --test --test-concurrency=1 --experimental-test-coverage",
     "dev": "nodemon src/server.js",
     "start": "node src/server.js",
     "db:migrate": "prisma migrate dev",
