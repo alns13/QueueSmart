@@ -1,6 +1,7 @@
 import { Router } from "express";
 import { requireAdmin, requireAuth } from "../../middleware/auth.js";
 import { createError } from "../../middleware/errorHandler.js";
+import prisma from "../../db/prisma.js";
 //import { services } from "../services/service.routes.js";
 
 export const queueRouter = Router();
@@ -120,7 +121,57 @@ queueRouter.get("/:serviceId/estimate", requireAuth, (req, res, next) => {
   }
 });
 
-adminQueueRouter.get("/", requireAdmin, (req, res) => res.json({ queues: services.map(queueResponse) }));
+adminQueueRouter.get("/", requireAdmin, async (req, res, next) => {
+  try {
+    const queues = await prisma.queue.findMany({
+      include: {
+        service: true,
+        entries: {
+          where: {
+            status: {
+              in: ["waiting","serving"],
+              }
+          },
+          include: {
+            user: {
+              include: {
+                profile: true,
+              },
+            },
+          },
+          orderBy: {
+            position: "asc",
+          },
+        },
+      },
+      orderBy: {
+        id: "asc",
+      },
+    });
+
+    res.json({
+      queues: queues.map((queue) => ({
+        id: queue.id,
+        serviceId: queue.serviceId,
+        serviceName: queue.service.serviceName,
+        entries: queue.entries.map((entry) => ({
+          id: entry.id,
+          userId: entry.userId,
+          email: entry.user.email,
+          name: entry.user.profile?.fullName || entry.user.email,
+          position: entry.position,
+          priority: entry.priority,
+          status: entry.status,
+          joinedAt: entry.joinedAt,
+          estimatedWaitTime:
+            (entry.position - 1) * queue.service.expectedDuration,
+        })),
+      })),
+    });
+  } catch (error) {
+    next(error);
+  }
+});
 
 adminQueueRouter.get("/reports/summary", requireAdmin, (req, res) => {
   const today = new Date().toISOString().slice(0, 10);
@@ -157,53 +208,200 @@ adminQueueRouter.get("/:serviceId", requireAdmin, (req, res, next) => {
   }
 });
 
-adminQueueRouter.post("/:serviceId/serve-next", requireAdmin, (req, res, next) => {
-  try {
-    const service = serviceById(req.params.serviceId);
-    const nextEntry = queueFor(service.id)[0];
-    if (!nextEntry) throw createError(404, "No users are waiting");
-    entries.splice(entries.findIndex((entry) => entry.id === nextEntry.id), 1);
-    const record = history.find((item) => item.id === nextEntry.historyId);
-    Object.assign(record, { outcome: "Served", completedAt: new Date().toISOString() });
-    addNotification(nextEntry.userId, "status", `You were served by ${service.serviceName}.`);
-    const upcoming = queueFor(service.id)[0];
-    if (upcoming) addNotification(upcoming.userId, "status", `You are almost ready for ${service.serviceName}.`);
-    res.json({ served: { ...nextEntry, serviceName: service.serviceName }, queue: queueResponse(service) });
-  } catch (error) {
-    next(error);
-  }
-});
+adminQueueRouter.post(
+  "/:serviceId/serve-next",
+  requireAdmin,
+  async (req, res, next) => {
+    try {
+      const serviceId = Number(req.params.serviceId);
 
-adminQueueRouter.delete("/:serviceId/entries/:entryId", requireAdmin, (req, res, next) => {
-  try {
-    const index = entries.findIndex((entry) => entry.id === Number(req.params.entryId) && entry.serviceId === Number(req.params.serviceId));
-    if (index < 0) throw createError(404, "Queue entry not found");
-    const [removed] = entries.splice(index, 1);
-    const record = history.find((item) => item.id === removed.historyId);
-    Object.assign(record, { outcome: "Removed", completedAt: new Date().toISOString() });
-    addNotification(removed.userId, "status", `You were removed from the ${serviceById(removed.serviceId).serviceName} queue.`);
-    res.json({ removed });
-  } catch (error) {
-    next(error);
-  }
-});
+      const queue = await prisma.queue.findUnique({
+        where: { serviceId },
+        include: {
+          entries: {
+            where: {
+              status: "waiting",
+            },
+            orderBy: {
+              position: "asc",
+            },
+          },
+        },
+      });
 
-adminQueueRouter.patch("/:serviceId/entries/:entryId/move", requireAdmin, (req, res, next) => {
-  try {
-    const queue = queueFor(req.params.serviceId);
-    const index = queue.findIndex((entry) => entry.id === Number(req.params.entryId));
-    const direction = Number(req.body?.direction);
-    if (index < 0) throw createError(404, "Queue entry not found");
-    if (![ -1, 1 ].includes(direction)) throw createError(400, "Direction must be -1 or 1");
-    const target = index + direction;
-    if (target >= 0 && target < queue.length) {
-      [queue[index].joinedAt, queue[target].joinedAt] = [queue[target].joinedAt, queue[index].joinedAt];
+      if (!queue) {
+        throw createError(404, "Queue not found");
+      }
+
+      const nextEntry = queue.entries[0];
+
+      if (!nextEntry) {
+        throw createError(404, "No users are waiting");
+      }
+
+      await prisma.$transaction([
+        prisma.queueEntry.updateMany({
+          where: {
+            queueId: queue.id,
+            status: "serving",
+          },
+          data: {
+            status: "served",
+          },
+        }),
+
+        prisma.queueEntry.update({
+          where: {
+            id: nextEntry.id,
+          },
+          data: {
+            status: "serving",
+          },
+        }),
+      ]);
+
+      res.json({
+        message: "Next user is now being served",
+      });
+    } catch (error) {
+      next(error);
     }
-    res.json({ queue: queueResponse(serviceById(req.params.serviceId)) });
-  } catch (error) {
-    next(error);
   }
-});
+);
+
+adminQueueRouter.post(
+  "/:serviceId/complete-current",
+  requireAdmin,
+  async (req, res, next) => {
+    try {
+      const serviceId = Number(req.params.serviceId);
+
+      const queue = await prisma.queue.findUnique({
+        where: { serviceId },
+        include: {
+          entries: {
+            where: {
+              status: "serving",
+            },
+          },
+        },
+      });
+
+      if (!queue) {
+        throw createError(404, "Queue not found");
+      }
+
+      const servingEntry = queue.entries[0];
+
+      if (!servingEntry) {
+        throw createError(404, "No customer is currently being served");
+      }
+
+      const completed = await prisma.queueEntry.update({
+        where: {
+          id: servingEntry.id,
+        },
+        data: {
+          status: "served",
+        },
+      });
+
+      res.json({ completed });
+    } catch (error) {
+      next(error);
+    }
+  }
+);
+
+adminQueueRouter.delete(
+  "/:serviceId/entries/:entryId",
+  requireAdmin,
+  async (req, res, next) => {
+    try {
+      const serviceId = Number(req.params.serviceId);
+      const entryId = Number(req.params.entryId);
+
+      const entry = await prisma.queueEntry.findUnique({
+        where: { id: entryId },
+        include: {
+          queue: true,
+        },
+      });
+
+      if (!entry || entry.queue.serviceId !== serviceId) {
+        throw createError(404, "Queue entry not found");
+      }
+
+      const removed = await prisma.queueEntry.delete({
+        where: { id: entryId },
+      });
+
+      res.json({ removed });
+    } catch (error) {
+      next(error);
+    }
+  }
+);
+
+adminQueueRouter.patch(
+  "/:serviceId/entries/:entryId/move",
+  requireAdmin,
+  async (req, res, next) => {
+    try {
+      const serviceId = Number(req.params.serviceId);
+      const entryId = Number(req.params.entryId);
+      const direction = Number(req.body?.direction);
+
+      if (![-1, 1].includes(direction)) {
+        throw createError(400, "Direction must be -1 or 1");
+      }
+
+      const queue = await prisma.queue.findUnique({
+        where: { serviceId },
+        include: {
+          entries: {
+            where: { status: "waiting" },
+            orderBy: { position: "asc" },
+          },
+        },
+      });
+
+      if (!queue) {
+        throw createError(404, "Queue not found");
+      }
+
+      const index = queue.entries.findIndex(
+        (entry) => entry.id === entryId
+      );
+
+      if (index < 0) {
+        throw createError(404, "Queue entry not found");
+      }
+
+      const targetIndex = index + direction;
+
+      if (targetIndex >= 0 && targetIndex < queue.entries.length) {
+        const currentEntry = queue.entries[index];
+        const targetEntry = queue.entries[targetIndex];
+
+        await prisma.$transaction([
+          prisma.queueEntry.update({
+            where: { id: currentEntry.id },
+            data: { position: targetEntry.position },
+          }),
+          prisma.queueEntry.update({
+            where: { id: targetEntry.id },
+            data: { position: currentEntry.position },
+          }),
+        ]);
+      }
+
+      res.json({ message: "Queue entry moved" });
+    } catch (error) {
+      next(error);
+    }
+  }
+);
 
 notificationRouter.get("/", requireAuth, (req, res) => res.json({ notifications: notifications.filter((item) => item.userId === req.user.id) }));
 notificationRouter.get("/summary", requireAuth, (req, res) => {

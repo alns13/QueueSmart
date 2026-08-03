@@ -353,3 +353,9 @@
     font-size: 14px;
     margin-bottom: 10px;
 }
+
+.serving_actions {
+  display: flex;
+  gap: 20px;
+  align-items: center;
+}

@@ -25,6 +25,7 @@ enum QueueStatus {
 
 enum QueueEntryStatus {
   waiting
+  serving
   served
   canceled
 }
