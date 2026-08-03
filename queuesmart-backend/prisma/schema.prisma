@@ -18,6 +18,17 @@ enum Priority {
   high
 }
 
+enum QueueStatus {
+  open
+  closed
+}
+
+enum QueueEntryStatus {
+  waiting
+  served
+  canceled
+}
+
 model User {
   id           Int          @id @default(autoincrement())
   email        String       @unique
@@ -25,6 +36,8 @@ model User {
   role         Role         @default(user)
   createdAt    DateTime     @default(now())
   profile      UserProfile?
+
+  queueEntries QueueEntry[]
 }
 
 model UserProfile {
@@ -46,4 +59,31 @@ model Service {
   priority         Priority @default(low)
   createdAt        DateTime @default(now())
   updatedAt        DateTime @updatedAt
+
+  queue Queue?
+}
+
+model Queue {
+  id        Int         @id @default(autoincrement())
+  serviceId Int         @unique
+  status    QueueStatus @default(open)
+  createdAt DateTime    @default(now())
+
+  service Service      @relation(fields: [serviceId], references: [id], onDelete: Cascade)
+  entries QueueEntry[]
+}
+
+model QueueEntry {
+  id       Int              @id @default(autoincrement())
+  queueId  Int
+  userId   Int
+  position Int
+  priority Priority         @default(low)
+  joinedAt DateTime         @default(now())
+  status   QueueEntryStatus @default(waiting)
+
+  queue Queue @relation(fields: [queueId], references: [id], onDelete: Cascade)
+  user  User  @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([queueId, userId])
 }

@@ -84,7 +84,17 @@ router.get("/", requireAuth, async (req, res, next) => {
 router.post("/", requireAdmin, async (req, res, next) => {
   try {
     const service = await prisma.service.create({
-      data: validateService(req.body),
+      data: {
+        ...validateService(req.body),
+        queue: {
+          create: {
+            status: "open",
+          },
+        },
+      },
+      include: {
+        queue: true,
+      },
     });
 
     res.status(201).json({ service });
@@ -108,34 +118,6 @@ router.patch("/:serviceId", requireAdmin, async (req, res, next) => {
   }
 });
 
-router.delete("/:serviceId", requireAdmin, async (req, res, next) => {
-  try {
-    const serviceId = Number(req.params.serviceId);
-
-    if (!Number.isInteger(serviceId) || serviceId <= 0) {
-      throw createError(400, "Invalid service ID");
-    }
-
-    const existingService = await prisma.service.findUnique({
-      where: { id: serviceId },
-    });
-
-    if (!existingService) {
-      throw createError(404, "Service not found");
-    }
-
-    await prisma.service.delete({
-      where: { id: serviceId },
-    });
-
-    res.status(200).json({
-      message: "Service deleted successfully",
-      service: existingService,
-    });
-  } catch (error) {
-    next(error);
-  }
-});
 
 
 export default router;
