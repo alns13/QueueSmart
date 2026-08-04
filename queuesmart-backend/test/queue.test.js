@@ -43,19 +43,19 @@ test("unauthenticated user cannot join a queue", async (t) => {
 async function createUserHeaders(request) {
     const email = `queue-test-${Date.now()}-${Math.random()}@example.com`;
     const password = "test123";
-  
+
     await request("/auth/register", {
       method: "POST",
       body: JSON.stringify({ email, password, fullName: "Queue Tester" }),
     });
-  
+
     const login = await request("/auth/login", {
       method: "POST",
       body: JSON.stringify({ email, password }),
     });
-  
+
     assert.equal(login.status, 200);
-  
+
     return {
       Authorization: `Bearer ${login.data.token}`,
     };
@@ -64,37 +64,37 @@ async function createUserHeaders(request) {
   test("joining a nonexistent service returns 404", async (t) => {
     const request = await startTestServer(t);
     const userHeaders = await createUserHeaders(request);
-  
+
     const response = await request("/queues/9999/join", {
       method: "POST",
       headers: userHeaders,
       body: "{}",
     });
-  
+
     assert.equal(response.status, 404);
   });
 
   test("user cannot join more than one queue", async (t) => {
     const request = await startTestServer(t);
     const userHeaders = await createUserHeaders(request);
-  
+
     const firstJoin = await request("/queues/1/join", {
       method: "POST",
       headers: userHeaders,
       body: "{}",
     });
-  
+
     assert.equal(firstJoin.status, 201);
-  
+
     const secondJoin = await request("/queues/2/join", {
       method: "POST",
       headers: userHeaders,
       body: "{}",
     });
-  
+
     assert.equal(secondJoin.status, 409);
     assert.equal(secondJoin.data.error, "You are already in a queue");
-  
+
     // Cleanup so this test does not leave an active queue entry behind.
     await request("/queues/1/leave", {
       method: "DELETE",
@@ -105,11 +105,11 @@ async function createUserHeaders(request) {
   test("regular user cannot access admin queue routes", async (t) => {
     const request = await startTestServer(t);
     const userHeaders = await createUserHeaders(request);
-  
+
     const response = await request("/admin/queues", {
       headers: userHeaders,
     });
-  
+
     assert.equal(response.status, 403);
   });
 
@@ -121,9 +121,9 @@ async function createUserHeaders(request) {
         password: "admin123",
       }),
     });
-  
+
     assert.equal(login.status, 200);
-  
+
     return {
       Authorization: `Bearer ${login.data.token}`,
     };
@@ -132,12 +132,12 @@ async function createUserHeaders(request) {
   test("admin cannot serve an empty queue", async (t) => {
     const request = await startTestServer(t);
     const adminHeaders = await createAdminHeaders(request);
-  
+
     const response = await request("/admin/queues/3/serve-next", {
       method: "POST",
       headers: adminHeaders,
     });
-  
+
     assert.equal(response.status, 404);
     assert.equal(response.data.error, "No users are waiting");
   });
@@ -211,4 +211,71 @@ async function createUserHeaders(request) {
         headers: user.headers,
       });
     }
+  });
+
+  test("closed queue blocks joining and reopening allows it", async (t) => {
+    const request = await startTestServer(t);
+    const adminHeaders = await createAdminHeaders(request);
+    const userHeaders = await createUserHeaders(request);
+
+    const service = await request("/services", {
+      method: "POST",
+      headers: adminHeaders,
+      body: JSON.stringify({
+        serviceName: `Lifecycle ${Date.now()}-${Math.random()}`,
+        description: "Queue close and reopen test",
+        expectedDuration: 10,
+        priority: "low",
+      }),
+    });
+
+    assert.equal(service.status, 201);
+
+    const serviceId = service.data.service.id;
+
+    const closeResponse = await request(
+      `/admin/queues/${serviceId}/status`,
+      {
+        method: "PATCH",
+        headers: adminHeaders,
+        body: JSON.stringify({ status: "closed" }),
+      }
+    );
+
+    assert.equal(closeResponse.status, 200);
+    assert.equal(closeResponse.data.queue.status, "closed");
+
+    const blockedJoin = await request(`/queues/${serviceId}/join`, {
+      method: "POST",
+      headers: userHeaders,
+      body: "{}",
+    });
+
+    assert.equal(blockedJoin.status, 409);
+    assert.equal(blockedJoin.data.error, "This queue is closed");
+
+    const reopenResponse = await request(
+      `/admin/queues/${serviceId}/status`,
+      {
+        method: "PATCH",
+        headers: adminHeaders,
+        body: JSON.stringify({ status: "open" }),
+      }
+    );
+
+    assert.equal(reopenResponse.status, 200);
+    assert.equal(reopenResponse.data.queue.status, "open");
+
+    const successfulJoin = await request(`/queues/${serviceId}/join`, {
+      method: "POST",
+      headers: userHeaders,
+      body: "{}",
+    });
+
+    assert.equal(successfulJoin.status, 201);
+
+    await request(`/queues/${serviceId}/leave`, {
+      method: "DELETE",
+      headers: userHeaders,
+    });
   });
