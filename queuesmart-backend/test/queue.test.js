@@ -279,3 +279,128 @@ async function createUserHeaders(request) {
       headers: userHeaders,
     });
   });
+
+  test("admin can move and remove queue entries", async (t) => {
+    const request = await startTestServer(t);
+    const adminHeaders = await createAdminHeaders(request);
+
+    const service = await request("/services", {
+      method: "POST",
+      headers: adminHeaders,
+      body: JSON.stringify({
+        serviceName: `Move Remove ${Date.now()}-${Math.random()}`,
+        description: "Queue move and remove test",
+        expectedDuration: 10,
+        priority: "low",
+      }),
+    });
+
+    assert.equal(service.status, 201);
+
+    const serviceId = service.data.service.id;
+    const users = [];
+
+    for (let index = 0; index < 3; index += 1) {
+      const email = `move-remove-${Date.now()}-${index}-${Math.random()}@example.com`;
+      const password = "test123";
+
+      const registration = await request("/auth/register", {
+        method: "POST",
+        body: JSON.stringify({
+          email,
+          password,
+          fullName: `Move Tester ${index + 1}`,
+        }),
+      });
+
+      assert.equal(registration.status, 201);
+
+      const login = await request("/auth/login", {
+        method: "POST",
+        body: JSON.stringify({ email, password }),
+      });
+
+      assert.equal(login.status, 200);
+
+      const headers = {
+        Authorization: `Bearer ${login.data.token}`,
+      };
+
+      const joined = await request(`/queues/${serviceId}/join`, {
+        method: "POST",
+        headers,
+        body: "{}",
+      });
+
+      assert.equal(joined.status, 201);
+      users.push({ email, headers });
+    }
+
+    const initialQueue = await request(`/admin/queues/${serviceId}`, {
+      headers: adminHeaders,
+    });
+
+    assert.equal(initialQueue.status, 200);
+    assert.deepEqual(
+      initialQueue.data.queue.entries.map((entry) => entry.email),
+      users.map((user) => user.email)
+    );
+
+    const thirdEntry = initialQueue.data.queue.entries.find(
+      (entry) => entry.email === users[2].email
+    );
+
+    const moved = await request(
+      `/admin/queues/${serviceId}/entries/${thirdEntry.id}/move`,
+      {
+        method: "PATCH",
+        headers: adminHeaders,
+        body: JSON.stringify({ direction: -1 }),
+      }
+    );
+
+    assert.equal(moved.status, 200);
+    assert.deepEqual(
+      moved.data.queue.entries.map((entry) => entry.email),
+      [users[0].email, users[2].email, users[1].email]
+    );
+
+    const removed = await request(
+      `/admin/queues/${serviceId}/entries/${thirdEntry.id}`,
+      {
+        method: "DELETE",
+        headers: adminHeaders,
+      }
+    );
+
+    assert.equal(removed.status, 200);
+    assert.equal(removed.data.removed.status, "canceled");
+
+    const remainingQueue = await request(`/admin/queues/${serviceId}`, {
+      headers: adminHeaders,
+    });
+
+    assert.deepEqual(
+      remainingQueue.data.queue.entries.map((entry) => entry.email),
+      [users[0].email, users[1].email]
+    );
+
+    assert.deepEqual(
+      remainingQueue.data.queue.entries.map((entry) => entry.position),
+      [1, 2]
+    );
+
+    const removedUserHistory = await request("/history/me", {
+      headers: users[2].headers,
+    });
+
+    assert.equal(removedUserHistory.status, 200);
+    assert.equal(removedUserHistory.data.history[0].status, "canceled");
+
+    for (const user of [users[0], users[1]]) {
+      await request(`/queues/${serviceId}/leave`, {
+        method: "DELETE",
+        headers: user.headers,
+      });
+    }
+  });
