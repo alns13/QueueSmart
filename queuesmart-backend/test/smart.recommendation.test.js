@@ -94,3 +94,30 @@ test("handles no open queues", () => {
   assert.equal(result.recommended, null);
   assert.match(result.message, /No open service queues/i);
 });
+
+test("breaks equal wait-time ties by choosing the shorter queue", () => {
+  const tied = [
+    {
+      serviceId: 1,
+      serviceName: "Service A",
+      expectedDuration: 10,
+      status: "open",
+      queueLength: 3,
+      estimatedWaitTime: 20,
+    },
+    {
+      serviceId: 2,
+      serviceName: "Service B",
+      expectedDuration: 20,
+      status: "open",
+      queueLength: 1,
+      estimatedWaitTime: 20,
+    },
+  ];
+
+  const result = pickAlternativeRecommendation(tied, null);
+
+  assert.equal(result.selected, null);
+  assert.equal(result.recommended.serviceId, 2);
+  assert.equal(result.recommended.queueLength, 1);
+});
