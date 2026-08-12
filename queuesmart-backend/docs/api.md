@@ -12,6 +12,11 @@ GET    /auth/me
 GET    /profile/me
 PATCH  /profile/me
 
+### Smart feature
+
+GET    /smart/recommend
+GET    /smart/recommend?serviceId=:serviceId
+
 ### Services
 
 GET    /services

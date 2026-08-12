@@ -7,6 +7,7 @@ export function JoinQueue() {
   const [services, setServices] = useState([]);
   const [selectedServiceId, setSelectedServiceId] = useState("");
   const [queueInfo, setQueueInfo] = useState(null);
+  const [recommendation, setRecommendation] = useState(null);
   const [activeEntry, setActiveEntry] = useState(null);
   const [message, setMessage] = useState("");
 
@@ -24,19 +25,30 @@ export function JoinQueue() {
   async function selectService(id) {
     setSelectedServiceId(id);
     setMessage("");
+    setRecommendation(null);
+    if (!id) {
+      setQueueInfo(null);
+      return;
+    }
     try {
-      setQueueInfo(id ? await apiRequest(`/queues/${id}/status`) : null);
+      const [status, rec] = await Promise.all([
+        apiRequest(`/queues/${id}/status`),
+        apiRequest(`/smart/recommend?serviceId=${id}`),
+      ]);
+      setQueueInfo(status);
+      setRecommendation(rec);
     } catch (error) {
       setMessage(error.message);
     }
   }
 
-  async function joinQueue() {
-    if (!selectedService) return setMessage("Please select a service before joining a queue.");
+  async function joinQueue(serviceId = selectedService?.id) {
+    if (!serviceId) return setMessage("Please select a service before joining a queue.");
     try {
-      const data = await apiRequest(`/queues/${selectedService.id}/join`, { method: "POST", body: "{}" });
+      const data = await apiRequest(`/queues/${serviceId}/join`, { method: "POST", body: "{}" });
       setActiveEntry(data.entry);
       setMessage(`You joined the ${data.entry.serviceName} queue.`);
+      setRecommendation(null);
     } catch (error) {
       setMessage(error.message);
     }
@@ -50,6 +62,11 @@ export function JoinQueue() {
     } catch (error) {
       setMessage(error.message);
     }
+  }
+
+  async function switchToRecommended() {
+    if (!recommendation?.recommended) return;
+    await selectService(String(recommendation.recommended.serviceId));
   }
 
   return (
@@ -68,7 +85,7 @@ export function JoinQueue() {
           {selectedService && queueInfo && (
             <Card size="sm">
               <CardHeader>
-                <CardTitle>{selectedService.serviceName} &emsp;<Badge variant="default">Available</Badge></CardTitle>
+                <CardTitle>{selectedService.serviceName} &emsp;<Badge variant="default">{queueInfo.status === "open" ? "Available" : "Closed"}</Badge></CardTitle>
                 <CardDescription>{selectedService.description}</CardDescription>
               </CardHeader>
               <CardContent className="grid grid-cols-2 gap-4">
@@ -77,7 +94,36 @@ export function JoinQueue() {
               </CardContent>
             </Card>
           )}
-          {!activeEntry && <button type="button" onClick={joinQueue}>Join Queue</button>}
+          {recommendation?.recommended && !activeEntry && (
+            <Card size="sm" className="border-primary/30 bg-primary/5">
+              <CardHeader>
+                <CardTitle className="text-base">Smarter option available</CardTitle>
+                <CardDescription>{recommendation.message}</CardDescription>
+              </CardHeader>
+              <CardContent className="flex flex-wrap items-center gap-3">
+                <div className="text-sm">
+                  <span className="font-semibold">{recommendation.recommended.serviceName}</span>
+                  {" · "}
+                  {recommendation.recommended.estimatedWaitTime} min
+                  {" · "}
+                  {recommendation.recommended.queueLength} waiting
+                  {recommendation.savingsMinutes > 0 && (
+                    <span className="text-muted-foreground"> (save ~{recommendation.savingsMinutes} min)</span>
+                  )}
+                </div>
+                <button type="button" onClick={switchToRecommended}>
+                  Switch to shorter queue
+                </button>
+                <button type="button" onClick={() => joinQueue(recommendation.recommended.serviceId)}>
+                  Join shorter queue
+                </button>
+              </CardContent>
+            </Card>
+          )}
+          {recommendation && !recommendation.recommended && recommendation.message && selectedServiceId && !activeEntry && (
+            <p className="text-sm text-muted-foreground" aria-live="polite">{recommendation.message}</p>
+          )}
+          {!activeEntry && <button type="button" onClick={() => joinQueue()}>Join Queue</button>}
           {activeEntry && <button type="button" onClick={leaveQueue}>Leave Queue</button>}
         </CardContent>
       </Card>
