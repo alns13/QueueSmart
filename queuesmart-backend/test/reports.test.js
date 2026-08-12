@@ -20,9 +20,14 @@ async function startTestServer(t) {
       },
     });
 
+    const contentType = response.headers.get("content-type") || "";
+
     return {
       status: response.status,
-      data: await response.json(),
+      data: contentType.includes("application/json")
+        ? await response.json()
+        : await response.text(),
+      headers: response.headers,
     };
   }
 
@@ -205,6 +210,30 @@ test("admin reporting endpoints return customer, service, and queue usage data",
 
   assert.equal(summary.status, 200);
   assert.ok(summary.data.completedToday >= 1);
+
+  const csvExport = await request(
+    "/admin/queues/reports/queue-usage.csv",
+    {
+      headers: adminHeaders,
+    }
+  );
+
+  assert.equal(csvExport.status, 200);
+  assert.match(csvExport.headers.get("content-type"), /^text\/csv/);
+  assert.match(
+    csvExport.headers.get("content-disposition"),
+    /^attachment; filename="queuesmart-queue-usage-\d{4}-\d{2}-\d{2}\.csv"$/
+  );
+  assert.equal(csvExport.headers.get("cache-control"), "private, no-store");
+  assert.equal(
+    csvExport.headers.get("access-control-expose-headers"),
+    "Content-Disposition"
+  );
+  assert.match(
+    csvExport.data,
+    /^Service,Users Served,Average Wait Time \(min\),Total Visits,Canceled/
+  );
+  assert.ok(csvExport.data.includes(serviceName));
 });
 
 test("regular user cannot access reporting endpoints", async (t) => {
@@ -240,6 +269,7 @@ test("regular user cannot access reporting endpoints", async (t) => {
       "/admin/queues/reports/customers",
       "/admin/queues/reports/services",
       "/admin/queues/reports/queue-usage",
+      "/admin/queues/reports/queue-usage.csv",
     ];
   
     for (const endpoint of endpoints) {

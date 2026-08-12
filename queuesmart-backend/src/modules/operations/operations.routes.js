@@ -2,6 +2,10 @@ import { Router } from "express";
 import prisma from "../../db/prisma.js";
 import { requireAdmin, requireAuth } from "../../middleware/auth.js";
 import { createError } from "../../middleware/errorHandler.js";
+import {
+  getQueueUsageReport,
+  queueUsageCsv,
+} from "./reports.service.js";
 
 export const queueRouter = Router();
 export const adminQueueRouter = Router();
@@ -225,26 +229,22 @@ adminQueueRouter.get("/reports/services", requireAdmin, async (req, res, next) =
 
 adminQueueRouter.get("/reports/queue-usage", requireAdmin, async (req, res, next) => {
   try {
-    const services = await prisma.service.findMany({ include: { queue: true }, orderBy: { id: "asc" } });
+    res.json({ queueUsage: await getQueueUsageReport() });
+  } catch (error) { next(error); }
+});
 
-    const queueUsage = await Promise.all(services.map(async (service) => {
-      if (!service.queue) return { id: service.id, serviceName: service.serviceName, usersServed: 0, averageWaitTime: 0, totalVisits: 0, canceled: 0 };
+adminQueueRouter.get("/reports/queue-usage.csv", requireAdmin, async (req, res, next) => {
+  try {
+    // Reuse the JSON report query so the dashboard and downloaded CSV stay aligned.
+    const queueUsage = await getQueueUsageReport();
+    const date = new Date().toISOString().slice(0, 10);
 
-      const entries = await prisma.queueEntry.findMany({ where: { queueId: service.queue.id } });
-      const servedEntries = entries.filter((entry) => entry.status === "served");
-      const canceled = entries.filter((entry) => entry.status === "canceled").length;
-
-      const totalWaitMs = servedEntries.reduce((sum, entry) => {
-        if (!entry.completedAt) return sum;
-        return sum + (new Date(entry.completedAt) - new Date(entry.joinedAt));
-      }, 0);
-
-      const averageWaitTime = servedEntries.length > 0 ? Math.round(totalWaitMs / servedEntries.length / 60000 * 10) / 10 : 0;
-
-      return { id: service.id, serviceName: service.serviceName, usersServed: servedEntries.length, averageWaitTime, totalVisits: entries.length, canceled };
-    }));
-
-    res.json({ queueUsage });
+    res.set({
+      "Content-Type": "text/csv; charset=utf-8",
+      "Content-Disposition": `attachment; filename="queuesmart-queue-usage-${date}.csv"`,
+      "Cache-Control": "private, no-store",
+    });
+    res.send(queueUsageCsv(queueUsage));
   } catch (error) { next(error); }
 });
 
