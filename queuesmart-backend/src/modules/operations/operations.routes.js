@@ -175,6 +175,79 @@ adminQueueRouter.get("/reports/summary", requireAdmin, async (req, res, next) =>
   } catch (error) { next(error); }
 });
 
+adminQueueRouter.get("/reports/customers", requireAdmin, async (req, res, next) => {
+  try {
+    const page = Math.max(Number(req.query.page) || 1, 1);
+    const limit = 10;
+    const skip = (page - 1) * limit;
+    const where = { role: "user" };
+
+    const [users, totalUsers] = await Promise.all([
+      prisma.user.findMany({ where, skip, take: limit, include: { profile: true, _count: { select: { queueEntries: true } } }, orderBy: { id: "asc" } }),
+      prisma.user.count({ where }),
+    ]);
+
+    const customers = users.map((user) => ({ id: user.id, name: user.profile?.fullName || user.email, email: user.email, totalVisits: user._count.queueEntries }));
+
+    res.json({ customers, pagination: { page, limit, totalUsers, totalPages: Math.ceil(totalUsers / limit) } });
+  } catch (error) { next(error); }
+});
+
+adminQueueRouter.get("/reports/customers/:userId/history", requireAdmin, async (req, res, next) => {
+  try {
+    const userId = Number(req.params.userId);
+    const entries = await prisma.queueEntry.findMany({ where: { userId }, include: { queue: { include: { service: true } } }, orderBy: { joinedAt: "desc" } });
+
+    const history = entries.map((entry) => ({ id: entry.id, service: entry.queue.service.serviceName, joinedAt: entry.joinedAt, completedAt: entry.completedAt, status: entry.status, priority: entry.priority }));
+
+    res.json({ history });
+  } catch (error) { next(error); }
+});
+
+adminQueueRouter.get("/reports/services", requireAdmin, async (req, res, next) => {
+  try {
+    const services = await prisma.service.findMany({ include: { queue: true }, orderBy: { id: "asc" } });
+
+    const serviceActivity = await Promise.all(services.map(async (service) => {
+      const queueId = service.queue?.id;
+      const [waiting, serving, served] = queueId ? await Promise.all([
+        prisma.queueEntry.count({ where: { queueId, status: "waiting" } }),
+        prisma.queueEntry.count({ where: { queueId, status: "serving" } }),
+        prisma.queueEntry.count({ where: { queueId, status: "served" } }),
+      ]) : [0, 0, 0];
+
+      return { id: service.id, serviceName: service.serviceName, description: service.description, expectedDuration: service.expectedDuration, priority: service.priority, queueStatus: service.queue?.status || "N/A", waiting, serving, served };
+    }));
+
+    res.json({ serviceActivity });
+  } catch (error) { next(error); }
+});
+
+adminQueueRouter.get("/reports/queue-usage", requireAdmin, async (req, res, next) => {
+  try {
+    const services = await prisma.service.findMany({ include: { queue: true }, orderBy: { id: "asc" } });
+
+    const queueUsage = await Promise.all(services.map(async (service) => {
+      if (!service.queue) return { id: service.id, serviceName: service.serviceName, usersServed: 0, averageWaitTime: 0, totalVisits: 0, canceled: 0 };
+
+      const entries = await prisma.queueEntry.findMany({ where: { queueId: service.queue.id } });
+      const servedEntries = entries.filter((entry) => entry.status === "served");
+      const canceled = entries.filter((entry) => entry.status === "canceled").length;
+
+      const totalWaitMs = servedEntries.reduce((sum, entry) => {
+        if (!entry.completedAt) return sum;
+        return sum + (new Date(entry.completedAt) - new Date(entry.joinedAt));
+      }, 0);
+
+      const averageWaitTime = servedEntries.length > 0 ? Math.round(totalWaitMs / servedEntries.length / 60000 * 10) / 10 : 0;
+
+      return { id: service.id, serviceName: service.serviceName, usersServed: servedEntries.length, averageWaitTime, totalVisits: entries.length, canceled };
+    }));
+
+    res.json({ queueUsage });
+  } catch (error) { next(error); }
+});
+
 adminQueueRouter.get("/:serviceId", requireAdmin, async (req, res, next) => {
   try { res.json({ queue: await queueResponse(await queueForService(req.params.serviceId)) }); }
   catch (error) { next(error); }
