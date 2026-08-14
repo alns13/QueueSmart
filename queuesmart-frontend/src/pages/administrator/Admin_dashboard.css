@@ -328,7 +328,131 @@
 
 .queue_header{
     font-size: 30px;
-    margin-bottom: 30px; 
+    margin-bottom: 12px; 
+}
+
+.queue_accordion {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    margin: 20px 0 30px;
+    max-width: 720px;
+}
+
+.queue_accordion_item {
+    border: 1px solid #d1d5db;
+    border-radius: 12px;
+    background-color: white;
+    overflow: hidden;
+}
+
+.queue_accordion_item.expanded {
+    border-color: #780000;
+}
+
+.queue_accordion_header {
+    width: 100%;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 14px 18px;
+    background: #ffffff;
+    color: #1f2937;
+    font-weight: 700;
+    text-align: left;
+    border: 0;
+    border-radius: 0;
+    min-height: 48px;
+    box-shadow: none;
+}
+
+.admin-theme button.queue_accordion_header,
+.admin-theme button.queue_accordion_header:hover:not(:disabled) {
+    background: #ffffff;
+    color: #1f2937;
+}
+
+.admin-theme button.queue_accordion_header:hover:not(:disabled) {
+    background: #f8fafc;
+}
+
+.queue_accordion_chevron {
+    width: 1rem;
+    color: #780000;
+    flex-shrink: 0;
+}
+
+.queue_accordion_title {
+    flex: 1;
+    font-size: 16px;
+}
+
+.queue_accordion_meta {
+    font-size: 13px;
+    font-weight: 600;
+    color: #656d77;
+}
+
+.queue_accordion_lanes {
+    display: flex;
+    flex-direction: column;
+    border-top: 1px solid #e5e7eb;
+    background: #f8fafc;
+}
+
+.queue_lane_row {
+    width: 100%;
+    display: grid;
+    grid-template-columns: 1fr auto auto;
+    gap: 16px;
+    align-items: center;
+    padding: 12px 18px 12px 42px;
+    background: #f8fafc;
+    color: #1f2937;
+    font-weight: 600;
+    text-align: left;
+    border: 0;
+    border-radius: 0;
+    border-bottom: 1px solid #eceff3;
+    border-left: 3px solid transparent;
+    min-height: 44px;
+    box-shadow: none;
+}
+
+.queue_lane_row:last-child {
+    border-bottom: none;
+}
+
+.admin-theme button.queue_lane_row,
+.admin-theme button.queue_lane_row:hover:not(:disabled) {
+    background: #f8fafc;
+    color: #1f2937;
+}
+
+.admin-theme button.queue_lane_row:hover:not(:disabled) {
+    background: #eef2f7;
+}
+
+.admin-theme button.queue_lane_row.active,
+.admin-theme button.queue_lane_row.active:hover:not(:disabled) {
+    background: #f3e8e8;
+    color: #1f2937;
+    border-left-color: #780000;
+}
+
+.admin-theme button.queue_lane_row.closed:not(.active) {
+    color: #6b7280;
+}
+
+.queue_lane_status {
+    text-transform: capitalize;
+    font-size: 13px;
+}
+
+.queue_lane_waiting {
+    font-size: 13px;
+    min-width: 5.5rem;
+    text-align: right;
 }
 
 .dashboard_header{

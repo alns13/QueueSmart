@@ -52,7 +52,17 @@ async function seedDatabase() {
     await prisma.service.upsert({
       where: { serviceName: service.serviceName },
       update: {},
-      create: { ...service, queue: { create: { status: "open" } } },
+      create: {
+        ...service,
+        laneWaitThresholdMinutes: 60,
+        queues: {
+          create: [
+            { status: "open", laneNumber: 1 },
+            { status: "closed", laneNumber: 2 },
+            { status: "closed", laneNumber: 3 },
+          ],
+        },
+      },
     });
   }
 

@@ -47,18 +47,50 @@ export default function AdminDashboard() {
     activeStaff: 0,
     completedToday: 0,
   });
+  const [capacityAlerts, setCapacityAlerts] = useState([]);
+  const [capacityNotice, setCapacityNotice] = useState("");
+  const [error, setError] = useState("");
+
+  async function loadDashboard() {
+    try {
+      const [summaryData, capacityData] = await Promise.all([
+        apiRequest("/admin/queues/reports/summary"),
+        apiRequest("/smart/capacity-alerts"),
+      ]);
+      setSummary(summaryData);
+      setCapacityAlerts(capacityData.alerts || []);
+    } catch (requestError) {
+      setError(requestError.message);
+    }
+  }
 
   useEffect(() => {
-    apiRequest("/admin/queues/reports/summary")
-      .then((data) => {
-        setSummary(data);
-      })
-      .catch((requestError) => {
-        setError(requestError.message);
-      });
+    loadDashboard();
   }, []);
 
-const [error, setError] = useState("");
+  async function handleCapacityAction(alert) {
+    setCapacityNotice("");
+    setError("");
+    try {
+      if (alert.action === "reopen" && alert.reopenQueueId) {
+        await apiRequest(`/admin/queues/${alert.reopenQueueId}/status`, {
+          method: "PATCH",
+          body: JSON.stringify({ status: "open" }),
+        });
+        setCapacityNotice(`${alert.serviceName} lane reopened.`);
+      } else if (alert.action === "open") {
+        const data = await apiRequest(`/services/${alert.serviceId}/lanes`, { method: "POST" });
+        setCapacityNotice(
+          data.reopened
+            ? `${data.queue.serviceName} Lane ${data.queue.laneNumber} reopened.`
+            : `${data.queue.serviceName} Lane ${data.queue.laneNumber} opened. Assign staff to serve that window.`
+        );
+      }
+      await loadDashboard();
+    } catch (requestError) {
+      setError(requestError.message);
+    }
+  }
 
   async function handleLogout() {
     await logout();
@@ -126,7 +158,24 @@ const [error, setError] = useState("");
                   <h1 className="dashboard_header">Admin Dashboard</h1>
                   <p>Welcome back, administrator!</p>
                   {error && <p className="error_message">{error}</p>}
+                  {capacityNotice && <p className="success_message" aria-live="polite">{capacityNotice}</p>}
               </div>
+              {capacityAlerts.length > 0 && (
+                <div className="servers_stats" style={{ marginBottom: "30px" }}>
+                  {capacityAlerts.map((alert) => (
+                    <div className="card" key={alert.serviceId}>
+                      <div className="title">Capacity suggestion</div>
+                      <p className="servers_describe">{alert.message}</p>
+                      <div className="divider"></div>
+                      {(alert.action === "open" || alert.action === "reopen") && (
+                        <button className="servers_button_edit" onClick={() => handleCapacityAction(alert)}>
+                          {alert.action === "reopen" ? "Reopen Lane" : "Open Extra Lane"}
+                        </button>
+                      )}
+                    </div>
+                  ))}
+                </div>
+              )}
               <div className="stats">
                   <div className="card">
                       <div className="title">Current Queue</div>

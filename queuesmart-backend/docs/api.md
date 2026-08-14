@@ -16,13 +16,15 @@ PATCH  /profile/me
 
 GET    /smart/recommend
 GET    /smart/recommend?serviceId=:serviceId
+GET    /smart/recommend?serviceId=:serviceId&queueId=:queueId
+GET    /smart/capacity-alerts
 
 ### Services
 
 GET    /services
-GET    /services/:serviceId
 POST   /services
 PATCH  /services/:serviceId
+POST   /services/:serviceId/lanes
 POST   /services/:serviceId/retire
 
 ### Queue (user)
@@ -32,15 +34,17 @@ DELETE /queues/:serviceId/leave
 GET    /queues/me/active
 GET    /queues/:serviceId/status
 GET    /queues/:serviceId/entries/me
-GET    /queues/:serviceId/estimate          
+GET    /queues/:serviceId/estimate
 
 ### Queue (admin)
 
 GET    /admin/queues
-GET    /admin/queues/:serviceId
-POST   /admin/queues/:serviceId/serve-next
-DELETE /admin/queues/:serviceId/entries/:entryId
-PATCH  /admin/queues/:serviceId/entries/:entryId/move
+GET    /admin/queues/:queueId
+PATCH  /admin/queues/:queueId/status
+POST   /admin/queues/:queueId/serve-next
+POST   /admin/queues/:queueId/complete-current
+DELETE /admin/queues/:queueId/entries/:entryId
+PATCH  /admin/queues/:queueId/entries/:entryId/move
 
 ### Notifications
 
@@ -90,11 +94,11 @@ GET    /admin/stats
 
 ### Service Management
 
-/services CRUD + retire (archive, does not hard-delete)
+/services CRUD + lanes + retire (archive)
 
 ### Queue Management
 
-/admin/queues/:id, serve-next, move/remove
+/admin/queues by queueId (lanes), serve-next, move/remove
 
 ### Admin Report
 

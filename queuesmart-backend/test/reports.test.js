@@ -56,12 +56,14 @@ test("admin reporting endpoints return customer, service, and queue usage data",
       description: "Reporting integration test service",
       expectedDuration: 10,
       priority: "low",
+      laneWaitThresholdMinutes: 60,
     }),
   });
 
   assert.equal(createdService.status, 201);
 
   const serviceId = createdService.data.service.id;
+  const queueId = createdService.data.service.lanes[0].queueId;
 
   const email = `report-user-${Date.now()}-${Math.random()}@example.com`;
   const password = "test123";
@@ -97,7 +99,7 @@ test("admin reporting endpoints return customer, service, and queue usage data",
   assert.equal(joined.status, 201);
 
   const served = await request(
-    `/admin/queues/${serviceId}/serve-next`,
+    `/admin/queues/${queueId}/serve-next`,
     {
       method: "POST",
       headers: adminHeaders,
@@ -107,7 +109,7 @@ test("admin reporting endpoints return customer, service, and queue usage data",
   assert.equal(served.status, 200);
 
   const completed = await request(
-    `/admin/queues/${serviceId}/complete-current`,
+    `/admin/queues/${queueId}/complete-current`,
     {
       method: "POST",
       headers: adminHeaders,

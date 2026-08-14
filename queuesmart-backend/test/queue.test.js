@@ -154,6 +154,7 @@ async function createUserHeaders(request) {
         description: "Rejects numeric strings",
         expectedDuration: "15",
         priority: "low",
+        laneWaitThresholdMinutes: 60,
       }),
     });
 
@@ -172,8 +173,10 @@ async function createUserHeaders(request) {
         description: "Queue ordering test",
         expectedDuration: 10,
         priority: "low",
+        laneWaitThresholdMinutes: 60,
       }),
     });
+    const queueId = service.data.service.lanes[0].queueId;
 
     const users = [];
     for (const priority of ["low", "high", "high"]) {
@@ -196,7 +199,7 @@ async function createUserHeaders(request) {
       users.push({ email, headers });
     }
 
-    const queue = await request(`/admin/queues/${service.data.service.id}`, {
+    const queue = await request(`/admin/queues/${queueId}`, {
       headers: adminHeaders,
     });
 
@@ -226,15 +229,17 @@ async function createUserHeaders(request) {
         description: "Queue close and reopen test",
         expectedDuration: 10,
         priority: "low",
+        laneWaitThresholdMinutes: 60,
       }),
     });
 
     assert.equal(service.status, 201);
 
     const serviceId = service.data.service.id;
+    const queueId = service.data.service.lanes[0].queueId;
 
     const closeResponse = await request(
-      `/admin/queues/${serviceId}/status`,
+      `/admin/queues/${queueId}/status`,
       {
         method: "PATCH",
         headers: adminHeaders,
@@ -255,7 +260,7 @@ async function createUserHeaders(request) {
     assert.equal(blockedJoin.data.error, "This queue is closed");
 
     const reopenResponse = await request(
-      `/admin/queues/${serviceId}/status`,
+      `/admin/queues/${queueId}/status`,
       {
         method: "PATCH",
         headers: adminHeaders,
@@ -292,12 +297,14 @@ async function createUserHeaders(request) {
         description: "Queue move and remove test",
         expectedDuration: 10,
         priority: "low",
+        laneWaitThresholdMinutes: 60,
       }),
     });
 
     assert.equal(service.status, 201);
 
     const serviceId = service.data.service.id;
+    const queueId = service.data.service.lanes[0].queueId;
     const users = [];
 
     for (let index = 0; index < 3; index += 1) {
@@ -336,7 +343,7 @@ async function createUserHeaders(request) {
       users.push({ email, headers });
     }
 
-    const initialQueue = await request(`/admin/queues/${serviceId}`, {
+    const initialQueue = await request(`/admin/queues/${queueId}`, {
       headers: adminHeaders,
     });
 
@@ -351,7 +358,7 @@ async function createUserHeaders(request) {
     );
 
     const moved = await request(
-      `/admin/queues/${serviceId}/entries/${thirdEntry.id}/move`,
+      `/admin/queues/${queueId}/entries/${thirdEntry.id}/move`,
       {
         method: "PATCH",
         headers: adminHeaders,
@@ -366,7 +373,7 @@ async function createUserHeaders(request) {
     );
 
     const removed = await request(
-      `/admin/queues/${serviceId}/entries/${thirdEntry.id}`,
+      `/admin/queues/${queueId}/entries/${thirdEntry.id}`,
       {
         method: "DELETE",
         headers: adminHeaders,
@@ -376,7 +383,7 @@ async function createUserHeaders(request) {
     assert.equal(removed.status, 200);
     assert.equal(removed.data.removed.status, "canceled");
 
-    const remainingQueue = await request(`/admin/queues/${serviceId}`, {
+    const remainingQueue = await request(`/admin/queues/${queueId}`, {
       headers: adminHeaders,
     });
 

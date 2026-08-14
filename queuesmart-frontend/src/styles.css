@@ -78,11 +78,11 @@ button:not([data-slot]) {
   --ring: #780000;
 }
 
-.admin-theme button:not([data-slot]) {
+.admin-theme button:not([data-slot]):not(.queue_accordion_header):not(.queue_lane_row) {
   background: #780000;
 }
 
-.admin-theme button:not([data-slot]):hover:not(:disabled) {
+.admin-theme button:not([data-slot]):not(.queue_accordion_header):not(.queue_lane_row):hover:not(:disabled) {
   background: #5c0000;
 }
 

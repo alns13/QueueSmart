@@ -53,7 +53,7 @@ test("smart recommendation endpoint requires authentication", async (t) => {
   assert.equal(response.status, 401);
 });
 
-test("smart recommendation endpoint returns an overall recommendation", async (t) => {
+test("smart recommendation endpoint returns a prompt when no service is selected", async (t) => {
   const request = await startTestServer(t);
   const adminHeaders = await createAdminHeaders(request);
 
@@ -63,7 +63,8 @@ test("smart recommendation endpoint returns an overall recommendation", async (t
 
   assert.equal(response.status, 200);
   assert.equal(response.data.selected, null);
-  assert.equal(typeof response.data.message, "string");
+  assert.equal(response.data.recommended, null);
+  assert.match(response.data.message, /select a service/i);
 });
 
 test("smart recommendation rejects an invalid serviceId", async (t) => {
@@ -111,6 +112,7 @@ test("smart recommendation accepts a valid selected service", async (t) => {
       description: "Smart recommendation API test",
       expectedDuration: 5,
       priority: "low",
+      laneWaitThresholdMinutes: 60,
     }),
   });
 

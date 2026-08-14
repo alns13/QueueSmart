@@ -39,9 +39,9 @@ test("user joins and admin serves a queue", async (t) => {
   assert.equal(history.data.history[0].outcome, "Served");
 
   const uniqueServiceName = `Testing ${Date.now()}-${Math.random()}`;
-  const createdService = await request("/services", { method: "POST", headers: adminHeaders, body: JSON.stringify({ serviceName: uniqueServiceName, description: "Integration test service", expectedDuration: 12, priority: "medium" }) });
+  const createdService = await request("/services", { method: "POST", headers: adminHeaders, body: JSON.stringify({ serviceName: uniqueServiceName, description: "Integration test service", expectedDuration: 12, priority: "medium", laneWaitThresholdMinutes: 60 }) });
   assert.equal(createdService.status, 201);
-  const updatedService = await request(`/services/${createdService.data.service.id}`, { method: "PATCH", headers: adminHeaders, body: JSON.stringify({ serviceName: `Updated ${uniqueServiceName}`, description: "Updated integration service", expectedDuration: 18, priority: "high" }) });
+  const updatedService = await request(`/services/${createdService.data.service.id}`, { method: "PATCH", headers: adminHeaders, body: JSON.stringify({ serviceName: `Updated ${uniqueServiceName}`, description: "Updated integration service", expectedDuration: 18, priority: "high", laneWaitThresholdMinutes: 45 }) });
   assert.equal(updatedService.data.service.expectedDuration, 18);
 
   const waitTime = await request("/waitTime/1", { headers: userHeaders });
@@ -77,24 +77,25 @@ test("queue status, notifications, and history persist in SQLite", async (t) => 
   const service = await request("/services", {
     method: "POST",
     headers: adminHeaders,
-    body: JSON.stringify({ serviceName: `Persistence ${Date.now()}-${Math.random()}`, description: "Persistence integration test", expectedDuration: 5, priority: "low" }),
+    body: JSON.stringify({ serviceName: `Persistence ${Date.now()}-${Math.random()}`, description: "Persistence integration test", expectedDuration: 5, priority: "low", laneWaitThresholdMinutes: 30 }),
   });
   assert.equal(service.status, 201);
   const serviceId = service.data.service.id;
+  const queueId = service.data.service.lanes[0].queueId;
 
   const email = `persistence-${Date.now()}-${Math.random()}@example.com`;
   await request("/auth/register", { method: "POST", body: JSON.stringify({ email, password: "test123", fullName: "Persistence Tester" }) });
   const login = await request("/auth/login", { method: "POST", body: JSON.stringify({ email, password: "test123" }) });
   const userHeaders = { Authorization: `Bearer ${login.data.token}` };
 
-  const closed = await request(`/admin/queues/${serviceId}/status`, { method: "PATCH", headers: adminHeaders, body: JSON.stringify({ status: "closed" }) });
+  const closed = await request(`/admin/queues/${queueId}/status`, { method: "PATCH", headers: adminHeaders, body: JSON.stringify({ status: "closed" }) });
   assert.equal(closed.status, 200);
   assert.equal(closed.data.queue.status, "closed");
   const rejected = await request(`/queues/${serviceId}/join`, { method: "POST", headers: userHeaders, body: "{}" });
   assert.equal(rejected.status, 409);
   assert.equal(rejected.data.error, "This queue is closed");
 
-  await request(`/admin/queues/${serviceId}/status`, { method: "PATCH", headers: adminHeaders, body: JSON.stringify({ status: "open" }) });
+  await request(`/admin/queues/${queueId}/status`, { method: "PATCH", headers: adminHeaders, body: JSON.stringify({ status: "open" }) });
   const joined = await request(`/queues/${serviceId}/join`, { method: "POST", headers: userHeaders, body: "{}" });
   assert.equal(joined.status, 201);
 

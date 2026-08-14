@@ -46,6 +46,17 @@ async function createAdminHeaders(request) {
   return { Authorization: `Bearer ${login.data.token}` };
 }
 
+function servicePayload(overrides = {}) {
+  return {
+    serviceName: `Service ${Date.now()}-${Math.random()}`,
+    description: "Test service",
+    expectedDuration: 10,
+    priority: "low",
+    laneWaitThresholdMinutes: 60,
+    ...overrides,
+  };
+}
+
 test("users only see open services and cannot join retired ones", async (t) => {
   const request = await startTestServer(t);
   const adminHeaders = await createAdminHeaders(request);
@@ -54,17 +65,17 @@ test("users only see open services and cannot join retired ones", async (t) => {
   const created = await request("/services", {
     method: "POST",
     headers: adminHeaders,
-    body: JSON.stringify({
+    body: JSON.stringify(servicePayload({
       serviceName: `Retire Visible ${Date.now()}-${Math.random()}`,
       description: "Retire visibility test",
       expectedDuration: 8,
-      priority: "low",
-    }),
+    })),
   });
   assert.equal(created.status, 201);
   const serviceId = created.data.service.id;
+  const queueId = created.data.service.lanes[0].queueId;
 
-  const close = await request(`/admin/queues/${serviceId}/status`, {
+  const close = await request(`/admin/queues/${queueId}/status`, {
     method: "PATCH",
     headers: adminHeaders,
     body: JSON.stringify({ status: "closed" }),
@@ -99,15 +110,18 @@ test("retire requires a closed empty queue and preserves history", async (t) => 
   const created = await request("/services", {
     method: "POST",
     headers: adminHeaders,
-    body: JSON.stringify({
+    body: JSON.stringify(servicePayload({
       serviceName: `Retire Flow ${Date.now()}-${Math.random()}`,
       description: "Retire safeguard test",
       expectedDuration: 6,
       priority: "medium",
-    }),
+      laneWaitThresholdMinutes: 45,
+    })),
   });
   assert.equal(created.status, 201);
   const serviceId = created.data.service.id;
+  const queueId = created.data.service.lanes[0].queueId;
+  assert.equal(created.data.service.laneWaitThresholdMinutes, 45);
 
   const openRetire = await request(`/services/${serviceId}/retire`, { method: "POST", headers: adminHeaders });
   assert.equal(openRetire.status, 409);
@@ -116,7 +130,7 @@ test("retire requires a closed empty queue and preserves history", async (t) => 
   const joined = await request(`/queues/${serviceId}/join`, { method: "POST", headers: userHeaders, body: "{}" });
   assert.equal(joined.status, 201);
 
-  await request(`/admin/queues/${serviceId}/status`, {
+  await request(`/admin/queues/${queueId}/status`, {
     method: "PATCH",
     headers: adminHeaders,
     body: JSON.stringify({ status: "closed" }),
@@ -130,8 +144,8 @@ test("retire requires a closed empty queue and preserves history", async (t) => 
   const notifications = await request("/notifications", { headers: userHeaders });
   assert.ok(notifications.data.notifications.some((item) => item.message.includes("queue is closing")));
 
-  await request(`/admin/queues/${serviceId}/serve-next`, { method: "POST", headers: adminHeaders });
-  await request(`/admin/queues/${serviceId}/complete-current`, { method: "POST", headers: adminHeaders });
+  await request(`/admin/queues/${queueId}/serve-next`, { method: "POST", headers: adminHeaders });
+  await request(`/admin/queues/${queueId}/complete-current`, { method: "POST", headers: adminHeaders });
 
   const historyBefore = await request("/history/me", { headers: userHeaders });
   assert.equal(historyBefore.data.history[0].outcome, "Served");
@@ -145,7 +159,7 @@ test("retire requires a closed empty queue and preserves history", async (t) => 
   assert.equal(historyAfter.data.history[0].serviceName, serviceName);
   assert.equal(historyAfter.data.history[0].outcome, "Served");
 
-  const reopen = await request(`/admin/queues/${serviceId}/status`, {
+  const reopen = await request(`/admin/queues/${queueId}/status`, {
     method: "PATCH",
     headers: adminHeaders,
     body: JSON.stringify({ status: "open" }),

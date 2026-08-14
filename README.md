@@ -42,56 +42,67 @@ Open **http://localhost:5173** in a browser. Register a new user for the student
 
 ---
 
-## Implemented Smart Feature: Alternative Service Recommendation
+## Implemented Smart Feature: Same-Service Lane Recommendations
 
-QueueSmart includes a **smart alternative-service recommendation** that helps users avoid long waits by comparing live queue load across open services.
+QueueSmart’s smart feature keeps customers on the **correct service** while helping staff add capacity when waits get long.
 
-### What it does
+### How it works
 
-When a user selects a service on the **Join Queue** page, the backend evaluates every **open** service queue using the same wait-time rule used elsewhere in the app:
+Each **service** (for example Technical Support) can have up to **three lanes** (windows). Customers pick a service; new joins go to the **shortest open lane**. The smart UI only recommends switching to another **lane of that same service**, never to an unrelated desk like General Inquiry.
+
+Admins set a per-service **lane wait threshold** (minutes) when creating or editing a service. When the last person’s wait on the shortest open lane reaches that threshold, admins get a **capacity notification** and a dashboard card to open or reopen another lane.
+
+Wait estimate:
 
 ```
-estimatedWaitTime = number of active people in queue × service expected duration
+estimatedWaitTime = active people in that lane × service expected duration
+lastPersonWait = waiting people in that lane × service expected duration
 ```
 
-It then compares that estimate to other open queues. If another service has a meaningfully shorter wait (by at least 1 minute), the UI surfaces a recommendation with the alternative name, wait time, queue length, and approximate time saved.
+### User experience
 
-Users can:
+- Join Queue lists services (not individual lanes)
+- Optional “Faster Lane Available” when a sibling lane is meaningfully shorter
+- Status shows service name and lane number
 
-- **Switch to shorter queue** (updates the service selection and refreshes wait info)
-- **Join shorter queue** (joins the recommended service immediately)
+### Admin experience
 
-If the selected service already has the shortest wait, the user sees a short confirmation instead of an alternative.
+- Service create/edit: **Open extra lane when wait reaches (minutes)**
+- Service cards: Open Extra Lane / Close Lanes
+- Queue Management: one tab per lane (`Technical Support · Lane 1`)
+- Dashboard: capacity suggestion cards with one-click open/reopen
 
 ### API
 
+| Method | Path                              | Auth     | Description                            |
+| ------ | --------------------------------- | -------- | -------------------------------------- |
+| `GET`  | `/smart/recommend?serviceId={id}` | User JWT | Same-service lane recommendation       |
+| `GET`  | `/smart/capacity-alerts`          | Admin    | Services that need another lane        |
+| `POST` | `/services/:id/lanes`             | Admin    | Open a new lane or reopen a closed one |
 
-| Method | Path                              | Auth     | Description                                       |
-| ------ | --------------------------------- | -------- | ------------------------------------------------- |
-| `GET`  | `/smart/recommend?serviceId={id}` | User JWT | Recommendation for a specific service selection   |
-| `GET`  | `/smart/recommend`                | User JWT | Overall shortest open queue (no selected service) |
-
-
-Example response when a better option exists:
+Example response when a better lane exists:
 
 ```json
 {
   "selected": {
-    "serviceId": 2,
-    "serviceName": "Financial Aid",
-    "estimatedWaitTime": 30,
-    "queueLength": 2,
+    "serviceId": 3,
+    "serviceName": "Technical Support",
+    "queueId": 3,
+    "laneNumber": 1,
+    "estimatedWaitTime": 70,
+    "queueLength": 7,
     "status": "open"
   },
   "recommended": {
-    "serviceId": 1,
-    "serviceName": "Admissions",
+    "serviceId": 3,
+    "serviceName": "Technical Support",
+    "queueId": 8,
+    "laneNumber": 2,
     "estimatedWaitTime": 10,
     "queueLength": 1,
     "status": "open"
   },
-  "savingsMinutes": 20,
-  "message": "Admissions has a shorter wait (10 min vs 30 min). You could save about 20 minutes."
+  "savingsMinutes": 60,
+  "message": "Technical Support Lane 2 has a shorter wait (10 min vs 70 min). You could save about 60 minutes."
 }
 ```
-
