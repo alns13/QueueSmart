@@ -738,6 +738,15 @@ notificationRouter.patch("/read-all", requireAuth, async (req, res, next) => {
   }
 });
 
+notificationRouter.delete("/", requireAuth, async (req, res, next) => {
+  try {
+    await prisma.notification.deleteMany({ where: { userId: req.user.id } });
+    res.json({ message: "Notifications cleared" });
+  } catch (error) {
+    next(error);
+  }
+});
+
 notificationRouter.patch("/:notificationId/read", requireAuth, async (req, res, next) => {
   try {
     const notification = await prisma.notification.findFirst({
@@ -750,6 +759,19 @@ notificationRouter.patch("/:notificationId/read", requireAuth, async (req, res, 
         data: { status: "viewed" },
       }),
     });
+  } catch (error) {
+    next(error);
+  }
+});
+
+notificationRouter.delete("/:notificationId", requireAuth, async (req, res, next) => {
+  try {
+    const notification = await prisma.notification.findFirst({
+      where: { id: Number(req.params.notificationId), userId: req.user.id },
+    });
+    if (!notification) throw createError(404, "Notification not found");
+    await prisma.notification.delete({ where: { id: notification.id } });
+    res.json({ message: "Notification deleted" });
   } catch (error) {
     next(error);
   }

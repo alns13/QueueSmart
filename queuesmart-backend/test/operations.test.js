@@ -106,6 +106,14 @@ test("queue status, notifications, and history persist in SQLite", async (t) => 
   assert.equal(viewed.data.notification.status, "viewed");
   const summary = await request("/notifications/summary", { headers: userHeaders });
   assert.equal(summary.data.unreadCount, 0);
+  const deleted = await request(`/notifications/${notificationId}`, { method: "DELETE", headers: userHeaders });
+  assert.equal(deleted.status, 200);
+  const afterDelete = await request("/notifications", { headers: userHeaders });
+  assert.ok(!afterDelete.data.notifications.some((item) => item.id === notificationId));
+  const cleared = await request("/notifications", { method: "DELETE", headers: userHeaders });
+  assert.equal(cleared.status, 200);
+  const afterClear = await request("/notifications", { headers: userHeaders });
+  assert.equal(afterClear.data.notifications.length, 0);
 
   await request(`/queues/${serviceId}/leave`, { method: "DELETE", headers: userHeaders });
   const history = await request("/history/me", { headers: userHeaders });

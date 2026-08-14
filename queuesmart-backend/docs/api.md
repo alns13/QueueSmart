@@ -52,6 +52,8 @@ GET    /notifications
 GET    /notifications/summary
 PATCH  /notifications/:notificationId/read
 PATCH  /notifications/read-all
+DELETE /notifications
+DELETE /notifications/:notificationId
 
 ### History / reporting
 
