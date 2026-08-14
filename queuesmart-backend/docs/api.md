@@ -6,6 +6,7 @@ POST   /auth/register
 POST   /auth/login
 POST   /auth/logout
 GET    /auth/me
+POST   /auth/change-password
 
 ### Profile
 
@@ -85,6 +86,10 @@ GET    /admin/stats
 ### History
 
 /history/me, /history/me/summary
+
+### Profile
+
+/profile/me, /auth/change-password
 
 ### Notifications tab
 

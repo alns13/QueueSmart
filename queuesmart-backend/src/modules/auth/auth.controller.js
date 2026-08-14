@@ -1,9 +1,11 @@
 import {
+  changePassword as changePasswordService,
   getCurrentUser,
   loginUser,
   registerUser,
 } from "./auth.service.js";
 import {
+  validateChangePasswordBody,
   validateLoginBody,
   validateRegisterBody,
 } from "./auth.validation.js";
@@ -41,6 +43,16 @@ export async function me(req, res, next) {
   try {
     const user = await getCurrentUser(req.user.id);
     res.status(200).json({ user });
+  } catch (error) {
+    next(error);
+  }
+}
+
+export async function changePassword(req, res, next) {
+  try {
+    const input = validateChangePasswordBody(req.body);
+    const result = await changePasswordService(req.user.id, input);
+    res.status(200).json(result);
   } catch (error) {
     next(error);
   }

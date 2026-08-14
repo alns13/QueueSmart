@@ -6,6 +6,7 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
+import { changePassword } from "@/api/auth.js";
 import { fetchMyProfile, updateMyProfile } from "@/api/profile.js";
 
 export function UserProfile() {
@@ -13,6 +14,9 @@ export function UserProfile() {
   const [error, setError] = useState("");
   const [message, setMessage] = useState("");
   const [isSaving, setIsSaving] = useState(false);
+  const [passwordError, setPasswordError] = useState("");
+  const [passwordMessage, setPasswordMessage] = useState("");
+  const [isChangingPassword, setIsChangingPassword] = useState(false);
 
   useEffect(() => {
     fetchMyProfile()
@@ -46,6 +50,39 @@ export function UserProfile() {
       setError(requestError.message || "Could not save profile");
     } finally {
       setIsSaving(false);
+    }
+  }
+
+  async function handlePasswordSubmit(event) {
+    event.preventDefault();
+    setPasswordError("");
+    setPasswordMessage("");
+
+    if (!event.currentTarget.checkValidity()) {
+      event.currentTarget.reportValidity();
+      return;
+    }
+
+    const form = event.currentTarget;
+    const formData = new FormData(form);
+    const currentPassword = String(formData.get("currentPassword") || "");
+    const newPassword = String(formData.get("newPassword") || "");
+    const confirmPassword = String(formData.get("confirmPassword") || "");
+
+    if (newPassword !== confirmPassword) {
+      setPasswordError("New password and confirmation do not match");
+      return;
+    }
+
+    setIsChangingPassword(true);
+    try {
+      await changePassword({ currentPassword, newPassword, confirmPassword });
+      setPasswordMessage("Password updated.");
+      form.reset();
+    } catch (requestError) {
+      setPasswordError(requestError.message || "Could not change password");
+    } finally {
+      setIsChangingPassword(false);
     }
   }
 
@@ -106,6 +143,63 @@ export function UserProfile() {
 
             <button type="submit" disabled={isSaving}>
               {isSaving ? "Saving..." : "Save Profile"}
+            </button>
+          </form>
+        </CardContent>
+      </Card>
+
+      <Card>
+        <CardHeader>
+          <CardTitle>Change Password</CardTitle>
+          <CardDescription>
+            Enter your current password, then choose a new one.
+          </CardDescription>
+        </CardHeader>
+        <CardContent>
+          <form className="space-y-4" onSubmit={handlePasswordSubmit}>
+            <label>
+              Current Password
+              <input
+                type="password"
+                name="currentPassword"
+                autoComplete="current-password"
+                minLength={1}
+                maxLength={72}
+                required
+              />
+            </label>
+
+            <label>
+              New Password
+              <input
+                type="password"
+                name="newPassword"
+                autoComplete="new-password"
+                minLength={6}
+                maxLength={72}
+                required
+              />
+            </label>
+
+            <label>
+              Confirm New Password
+              <input
+                type="password"
+                name="confirmPassword"
+                autoComplete="new-password"
+                minLength={6}
+                maxLength={72}
+                required
+              />
+            </label>
+
+            {passwordError && <p className="auth-error">{passwordError}</p>}
+            {passwordMessage && (
+              <p className="text-sm font-medium text-emerald-700">{passwordMessage}</p>
+            )}
+
+            <button type="submit" disabled={isChangingPassword}>
+              {isChangingPassword ? "Updating..." : "Update Password"}
             </button>
           </form>
         </CardContent>

@@ -139,3 +139,23 @@ export async function getCurrentUser(userId) {
   }
   return publicUser(user, user.profile);
 }
+
+export async function changePassword(userId, { currentPassword, newPassword }) {
+  const user = await findUserById(userId);
+  if (!user) {
+    throw createError(401, "User not found");
+  }
+
+  const matches = await bcrypt.compare(currentPassword, user.passwordHash);
+  if (!matches) {
+    throw createError(401, "Current password is incorrect");
+  }
+
+  const passwordHash = await bcrypt.hash(newPassword, 10);
+  await prisma.user.update({
+    where: { id: user.id },
+    data: { passwordHash },
+  });
+
+  return { message: "Password updated" };
+}

@@ -82,3 +82,40 @@ export function validateLoginBody(body = {}) {
 
   return { email, password };
 }
+
+function validateNewPassword(password, fieldName = "New password") {
+  requireString(password, fieldName);
+  if (password.length > MAX_PASSWORD_LENGTH) {
+    throw createError(
+      400,
+      `${fieldName} must be ${MAX_PASSWORD_LENGTH} characters or less`
+    );
+  }
+  if (password.length < 6) {
+    throw createError(400, `${fieldName} must be at least 6 characters`);
+  }
+  return password;
+}
+
+export function validateChangePasswordBody(body = {}) {
+  requireFields(body, ["currentPassword", "newPassword", "confirmPassword"]);
+  requireString(body.currentPassword, "Current password");
+  requireString(body.confirmPassword, "Confirm password");
+
+  if (!body.currentPassword) {
+    throw createError(400, "Current password is required");
+  }
+
+  const newPassword = validateNewPassword(body.newPassword);
+  if (body.confirmPassword !== newPassword) {
+    throw createError(400, "New password and confirmation do not match");
+  }
+  if (body.currentPassword === newPassword) {
+    throw createError(400, "New password must be different from the current password");
+  }
+
+  return {
+    currentPassword: body.currentPassword,
+    newPassword,
+  };
+}
