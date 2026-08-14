@@ -23,8 +23,7 @@ GET    /services
 GET    /services/:serviceId
 POST   /services
 PATCH  /services/:serviceId
-DELETE /services/:serviceId
-PATCH  /services/:serviceId/status
+POST   /services/:serviceId/retire
 
 ### Queue (user)
 
@@ -91,7 +90,7 @@ GET    /admin/stats
 
 ### Service Management
 
-/services CRUD + /services/:id/status
+/services CRUD + retire (archive, does not hard-delete)
 
 ### Queue Management
 

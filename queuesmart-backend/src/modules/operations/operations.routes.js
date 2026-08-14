@@ -71,6 +71,7 @@ async function queueResponse(queue) {
     serviceId: queue.serviceId,
     serviceName: queue.service.serviceName,
     status: queue.status,
+    archived: Boolean(queue.service.archived),
     createdAt: queue.createdAt,
     entries: entries.map((entry, index) => entryView(entry, index, entries.length)),
   };
@@ -79,6 +80,7 @@ async function queueResponse(queue) {
 queueRouter.post("/:serviceId/join", requireAuth, async (req, res, next) => {
   try {
     const queue = await queueForService(req.params.serviceId);
+    if (queue.service.archived) throw createError(409, "This service is no longer available");
     if (queue.status !== "open") throw createError(409, "This queue is closed");
     const priority = String(req.body?.priority || "low").toLowerCase();
     if (!(priority in priorityWeight)) throw createError(400, "Priority must be low, medium, or high");
@@ -216,7 +218,7 @@ adminQueueRouter.get("/reports/services", requireAdmin, async (req, res, next) =
         prisma.queueEntry.count({ where: { queueId, status: "served" } }),
       ]) : [0, 0, 0];
 
-      return { id: service.id, serviceName: service.serviceName, description: service.description, expectedDuration: service.expectedDuration, priority: service.priority, queueStatus: service.queue?.status || "N/A", waiting, serving, served };
+      return { id: service.id, serviceName: service.serviceName, description: service.description, expectedDuration: service.expectedDuration, priority: service.priority, archived: Boolean(service.archived), queueStatus: service.archived ? "retired" : (service.queue?.status || "N/A"), waiting, serving, served };
     }));
 
     res.json({ serviceActivity });
@@ -258,7 +260,23 @@ adminQueueRouter.patch("/:serviceId/status", requireAdmin, async (req, res, next
     const status = String(req.body?.status || "").toLowerCase();
     if (!["open", "closed"].includes(status)) throw createError(400, "Status must be open or closed");
     const queue = await queueForService(req.params.serviceId);
+    if (queue.service.archived) {
+      throw createError(409, "Retired services cannot be reopened");
+    }
+    const previousStatus = queue.status;
     const updated = await prisma.queue.update({ where: { id: queue.id }, data: { status }, include: { service: true } });
+
+    if (previousStatus === "open" && status === "closed") {
+      const active = await prisma.queueEntry.findMany({
+        where: { queueId: queue.id, status: { in: activeStatuses } },
+      });
+      await Promise.all(active.map((entry) => addNotification(
+        entry.userId,
+        "status",
+        `The ${queue.service.serviceName} queue is closing. You will still be served.`,
+      )));
+    }
+
     res.json({ queue: await queueResponse(updated) });
   } catch (error) { next(error); }
 });

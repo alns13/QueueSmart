@@ -80,6 +80,7 @@ export function pickAlternativeRecommendation(snapshots, selectedServiceId, minS
 
 export async function buildServiceWaitSnapshots() {
   const services = await prisma.service.findMany({
+    where: { archived: false },
     include: { queue: true },
     orderBy: { id: "asc" },
   });

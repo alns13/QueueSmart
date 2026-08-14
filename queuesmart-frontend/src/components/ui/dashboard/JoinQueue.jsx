@@ -80,7 +80,9 @@ export function JoinQueue() {
           {message && <div className="rounded-lg border p-4 text-sm font-medium" aria-live="polite">{message}</div>}
           <select value={selectedServiceId} onChange={(event) => selectService(event.target.value)} className="w-full rounded-lg border bg-background p-3 text-sm">
             <option value="">Choose a service...</option>
-            {services.map((service) => <option key={service.id} value={service.id}>{service.serviceName}</option>)}
+            {services.filter((service) => !service.archived && service.queueStatus !== "closed").map((service) => (
+              <option key={service.id} value={service.id}>{service.serviceName}</option>
+            ))}
           </select>
           {selectedService && queueInfo && (
             <Card size="sm">
@@ -97,7 +99,7 @@ export function JoinQueue() {
           {recommendation?.recommended && !activeEntry && (
             <Card size="sm" className="border-primary/30 bg-primary/5">
               <CardHeader>
-                <CardTitle className="text-base">Smarter option available</CardTitle>
+                <CardTitle className="text-base">Faster Option Available</CardTitle>
                 <CardDescription>{recommendation.message}</CardDescription>
               </CardHeader>
               <CardContent className="flex flex-wrap items-center gap-3">
@@ -123,7 +125,7 @@ export function JoinQueue() {
           {recommendation && !recommendation.recommended && recommendation.message && selectedServiceId && !activeEntry && (
             <p className="text-sm text-muted-foreground" aria-live="polite">{recommendation.message}</p>
           )}
-          {!activeEntry && <button type="button" onClick={() => joinQueue()}>Join Queue</button>}
+          {!activeEntry && <button type="button" onClick={() => joinQueue()} disabled={!selectedService || queueInfo?.status !== "open"}>Join Queue</button>}
           {activeEntry && <button type="button" onClick={leaveQueue}>Leave Queue</button>}
         </CardContent>
       </Card>

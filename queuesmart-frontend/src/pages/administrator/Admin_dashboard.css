@@ -46,7 +46,7 @@
 }
 
 .admin-nav li.active {
-  background-color: #4b50c8;
+  background-color: #780000;
   color: white;
 }
 
@@ -145,25 +145,33 @@
     font-size: 18px;
 }
 
-.servers_button_pause{
+.admin-theme button.servers_button_pause{
     margin-right: 10px;
     font-size: 13px;
     background-color: rgb(226, 148, 4);
-    border-radius: 999px;
+    border-radius: 8px;
+}
+
+.admin-theme button.servers_button_pause:hover:not(:disabled){
+    background-color: rgb(202, 132, 4);
 }
 
 .servers_button_edit{
     margin-right: 10px;
     font-size: 13px;
-    background-color: 4f46e5(226, 148, 4);
-    border-radius: 999px;
+    background-color: #780000;
+    border-radius: 8px;
 }
 
-.servers_button_delete{
+.admin-theme button.servers_button_delete{
     margin-right: 10px;
     font-size: 13px;
-    background-color:red;
-    border-radius: 999px;
+    background-color: #4a0000;
+    border-radius: 8px;
+}
+
+.admin-theme button.servers_button_delete:hover:not(:disabled){
+    background-color: #3a0000;
 }
 
 .service_today{
@@ -171,14 +179,14 @@
 }
 
 .serving_card {
-    background-color:rgba(59, 130, 246, 0.05);
+    background-color: rgba(120, 0, 0, 0.05);
     border-radius: 20px;
     padding: 25px 30px;
     margin-bottom: 25px;
     display: flex;
     justify-content: space-between;
     align-items: center;
-    border:1px solid rgb(2, 2, 179);
+    border: 1px solid #780000;
 }
 
 .serving_card h3 {
@@ -190,7 +198,7 @@
 }
 
 .call_next_button {
-    background-color: #2563eb;
+    background-color: #780000;
     color: white;
     border: none;
     border-radius: 20px;
@@ -352,6 +360,25 @@
     color: red;
     font-size: 14px;
     margin-bottom: 10px;
+}
+
+.success_message {
+    color: #166534;
+    font-size: 14px;
+    margin-bottom: 10px;
+}
+
+.retired_section {
+    margin-top: 20px;
+}
+
+.retired_section h2 {
+    margin-bottom: 8px;
+}
+
+.retired_card {
+    opacity: 0.75;
+    background-color: #f8fafc;
 }
 
 .serving_actions {

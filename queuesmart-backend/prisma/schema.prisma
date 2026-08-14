@@ -54,13 +54,15 @@ model UserProfile {
 }
 
 model Service {
-  id               Int      @id @default(autoincrement())
-  serviceName      String   @unique
+  id               Int       @id @default(autoincrement())
+  serviceName      String    @unique
   description      String
   expectedDuration Int
-  priority         Priority @default(low)
-  createdAt        DateTime @default(now())
-  updatedAt        DateTime @updatedAt
+  priority         Priority  @default(low)
+  archived         Boolean   @default(false)
+  archivedAt       DateTime?
+  createdAt        DateTime  @default(now())
+  updatedAt        DateTime  @updatedAt
 
   queue Queue?
 }

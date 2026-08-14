@@ -70,6 +70,22 @@ button:not([data-slot]) {
   cursor: pointer;
 }
 
+.admin-theme {
+  --primary: #780000;
+  --primary-foreground: #fff;
+  --sidebar-primary: #780000;
+  --sidebar-primary-foreground: #fff;
+  --ring: #780000;
+}
+
+.admin-theme button:not([data-slot]) {
+  background: #780000;
+}
+
+.admin-theme button:not([data-slot]):hover:not(:disabled) {
+  background: #5c0000;
+}
+
 .auth-screen {
   min-height: 100vh;
   display: grid;

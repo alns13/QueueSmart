@@ -66,7 +66,7 @@ const [error, setError] = useState("");
   }
 
   return (
-    <SidebarProvider>
+    <SidebarProvider className="admin-theme">
       <Sidebar>
         <SidebarHeader className="border-b border-sidebar-border p-4">
           <h2 className="text-lg font-bold">QueueSmart</h2>

@@ -5,7 +5,7 @@ dotenv.config();
 const isTest = Boolean(process.env.NODE_TEST_CONTEXT);
 
 function required(name, testValue) {
-  const value = process.env[name] || (isTest ? testValue : "");
+  const value = isTest ? testValue : (process.env[name] || "");
   if (!value) {
     throw new Error(`${name} is required. Copy .env.example to .env and provide a secure value.`);
   }

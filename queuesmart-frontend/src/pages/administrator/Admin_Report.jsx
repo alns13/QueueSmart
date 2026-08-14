@@ -102,7 +102,7 @@ function AdminReport(){
     };
 
     return (
-        <div>
+        <div className="admin-theme">
             <div className="report_header">
                 <h1>Report</h1>
                 {error && <p className="error_message">{error}</p>}
@@ -137,7 +137,7 @@ function AdminReport(){
                             <YAxis />
                             <Tooltip />
                             <Legend />
-                            <Bar dataKey="users" name="Users" fill="#8b5cf6">
+                            <Bar dataKey="users" name="Users" fill="#780000">
                             <LabelList
                                 dataKey="users"
                                 position="insideTop"

@@ -9,8 +9,12 @@ function QueueManagement() {
   async function loadQueues() {
     try {
       const data = await apiRequest("/admin/queues");
-      setQueues(data.queues);
-      setSelectedServiceId((current) => current || data.queues[0]?.serviceId || null);
+      setQueues(data.queues.filter((queue) => !queue.archived));
+      setSelectedServiceId((current) => {
+        const visible = data.queues.filter((queue) => !queue.archived);
+        if (visible.some((queue) => queue.serviceId === current)) return current;
+        return visible[0]?.serviceId || null;
+      });
     } catch (error) {
       setNotice(error.message);
     }
@@ -39,7 +43,7 @@ function QueueManagement() {
   }
 
   return (
-    <div>
+    <div className="admin-theme">
       <h1 className="queue_header">Queue Management</h1>
       <div>
         {queues.map((queue) => <button key={queue.serviceId} className={selectedServiceId === queue.serviceId ? "queue_button active" : "queue_button"} onClick={() => setSelectedServiceId(queue.serviceId)}>{queue.serviceName}</button>)}
@@ -52,7 +56,7 @@ function QueueManagement() {
             onClick={() => runAction(
               `/admin/queues/${selectedServiceId}/status`,
               { method: "PATCH", body: JSON.stringify({ status: selectedQueue.status === "open" ? "closed" : "open" }) },
-              `Queue ${selectedQueue.status === "open" ? "closed" : "opened"}.`
+              `Queue ${selectedQueue.status === "open" ? "closed" : "opened"}. ${selectedQueue.status === "open" ? "People already in line will still be served." : ""}`.trim()
             )}
           >
             {selectedQueue.status === "open" ? "Close Queue" : "Open Queue"}
