@@ -324,6 +324,41 @@
 .report_header{
     font-size: 30px;
     margin-bottom: 30px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    flex-wrap: wrap;
+    gap: 16px;
+}
+
+.report_header .error_message{
+    flex-basis: 100%;
+    margin: 0;
+}
+
+.report_export_button{
+    border: none;
+    border-radius: 10px;
+    background-color: #4f46e5;
+    color: white;
+    cursor: pointer;
+    font-size: 14px;
+    font-weight: 600;
+    padding: 11px 18px;
+}
+
+.report_export_button:hover:not(:disabled){
+    background-color: #4338ca;
+}
+
+.report_export_button:focus-visible{
+    outline: 3px solid rgba(79, 70, 229, 0.35);
+    outline-offset: 2px;
+}
+
+.report_export_button:disabled{
+    cursor: wait;
+    opacity: 0.65;
 }
 
 .queue_header{

@@ -31,3 +31,36 @@ export async function apiRequest(path, options = {}) {
 
   return data;
 }
+
+export async function apiFileRequest(path, options = {}) {
+  const headers = { ...(options.headers || {}) };
+  const token = sessionStorage.getItem("token");
+
+  if (token) {
+    headers.Authorization = `Bearer ${token}`;
+  }
+
+  const response = await fetch(`${API_BASE_URL}${path}`, {
+    ...options,
+    headers,
+  });
+
+  if (!response.ok) {
+    const contentType = response.headers.get("content-type") || "";
+    const data = contentType.includes("application/json")
+      ? await response.json()
+      : null;
+    const error = new Error(data?.error || "Download failed");
+    error.status = response.status;
+    error.details = data?.details;
+    throw error;
+  }
+
+  const disposition = response.headers.get("content-disposition") || "";
+  const filenameMatch = disposition.match(/filename="([^"]+)"/i);
+
+  return {
+    blob: await response.blob(),
+    filename: filenameMatch?.[1] || "queuesmart-queue-usage.csv",
+  };
+}
