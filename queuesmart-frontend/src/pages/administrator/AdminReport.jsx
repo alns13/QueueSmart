@@ -1,5 +1,5 @@
 import React, { useEffect, useState, useRef } from "react";
-import { apiRequest } from "@/api/client.js";
+import { apiFileRequest, apiRequest } from "@/api/client.js";
 
 
 import {
@@ -13,7 +13,7 @@ import {
   ResponsiveContainer,
   LabelList,
 } from "recharts";
-import "./Admin_dashboard.css";
+import "./admin-dashboard.css";
 
 function AdminReport(){
     const [report, setReport] = useState({
@@ -31,6 +31,7 @@ function AdminReport(){
     const [customerHistory, setCustomerHistory] = useState([]);
     const [serviceActivity, setServiceActivity] = useState([]);
     const [queueUsage, setQueueUsage] = useState([]);
+    const [isExporting, setIsExporting] = useState(false);
     const historyRef = useRef(null);
 
     useEffect(() => {
@@ -101,10 +102,43 @@ function AdminReport(){
         });
     };
 
+    const handleExportQueueUsage = async () => {
+        setIsExporting(true);
+        setError("");
+
+        try {
+            const { blob, filename } = await apiFileRequest(
+                "/admin/queues/reports/queue-usage.csv"
+            );
+            const downloadUrl = URL.createObjectURL(blob);
+            const link = document.createElement("a");
+
+            link.href = downloadUrl;
+            link.download = filename;
+            document.body.appendChild(link);
+            link.click();
+            link.remove();
+            // Release the temporary URL after the browser has started the download.
+            setTimeout(() => URL.revokeObjectURL(downloadUrl), 0);
+        } catch (requestError) {
+            setError(requestError.message);
+        } finally {
+            setIsExporting(false);
+        }
+    };
+
     return (
         <div className="admin-theme">
             <div className="report_header">
                 <h1>Report</h1>
+                <button
+                    className="report_export_button"
+                    type="button"
+                    onClick={handleExportQueueUsage}
+                    disabled={isExporting}
+                >
+                    {isExporting ? "Exporting..." : "Export Queue Usage CSV"}
+                </button>
                 {error && <p className="error_message">{error}</p>}
             </div>
             <div className="from1">

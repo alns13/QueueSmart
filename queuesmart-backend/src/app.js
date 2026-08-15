@@ -17,6 +17,7 @@ const app = express();
 app.use(
   cors({
     origin: env.corsOrigin,
+    exposedHeaders: ["Content-Disposition"],
   })
 );
 app.use(express.json());

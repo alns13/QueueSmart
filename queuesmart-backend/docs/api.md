@@ -60,8 +60,15 @@ DELETE /notifications/:notificationId
 
 GET    /history/me
 GET    /history/me/summary
-GET    /admin/history
-GET    /admin/stats
+GET    /admin/queues/reports/summary
+GET    /admin/queues/reports/customers?page=:page
+GET    /admin/queues/reports/customers/:userId/history
+GET    /admin/queues/reports/services
+GET    /admin/queues/reports/queue-usage
+GET    /admin/queues/reports/queue-usage.csv
+
+The queue usage CSV is generated on demand, requires an administrator JWT, and
+downloads all current per-service queue usage statistics.
 
 # Mapping
 
@@ -109,7 +116,9 @@ GET    /admin/stats
 
 ### Admin Report
 
-/admin/stats
+/admin/queues/reports/summary, /admin/queues/reports/customers,
+/admin/queues/reports/services, /admin/queues/reports/queue-usage,
+/admin/queues/reports/queue-usage.csv
 
 # Build Priority List
 

@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
-import "./Admin_dashboard.css";
+import "./admin-dashboard.css";
 import { apiRequest } from "@/api/client.js";
 
 import {
@@ -27,9 +27,9 @@ import {
 } from "@phosphor-icons/react";
 
 import { logout } from "@/api/auth.js";
-import AdminReport from "./Admin_Report.jsx";
-import QueueManagement from "./Queue_Management.jsx";
-import ServerManagement from "./Server_Management.jsx";
+import AdminReport from "./AdminReport.jsx";
+import QueueManagement from "./QueueManagement.jsx";
+import ServiceManagement from "./ServiceManagement.jsx";
 
 const navItems = [
   { title: "Dashboard", icon: HouseIcon },
@@ -198,7 +198,7 @@ export default function AdminDashboard() {
           )}
 
           {activePage === "Queue Management" && <QueueManagement />}
-          {activePage === "Service Management" && <ServerManagement />}
+          {activePage === "Service Management" && <ServiceManagement />}
           {activePage === "Admin Report" && <AdminReport />}
         </div>
       </SidebarInset>
