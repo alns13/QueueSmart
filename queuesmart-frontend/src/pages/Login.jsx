@@ -23,7 +23,7 @@ export default function Login() {
     setIsSubmitting(true);
     try {
       const { user } = await login({ email, password });
-      navigate(user.role === "admin" ? "/Admin_dashboard" : "/user-dashboard", {
+      navigate(user.role === "admin" ? "/admin-dashboard" : "/user-dashboard", {
         replace: true,
       });
     } catch (err) {

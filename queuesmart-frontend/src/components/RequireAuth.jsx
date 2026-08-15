@@ -27,7 +27,7 @@ export function RequireUser({ children }) {
   }
 
   if (getRole() === "admin") {
-    return <Navigate to="/Admin_dashboard" replace />;
+    return <Navigate to="/admin-dashboard" replace />;
   }
 
   return children;

@@ -4,14 +4,15 @@ import { RequireAdmin, RequireUser } from "./components/RequireAuth.jsx";
 import Login from "./pages/Login.jsx";
 import Register from "./pages/Register.jsx";
 import UserDashboard from "./pages/UserDashboard.jsx";
-import Admindashbord from "./pages/administrator/Admin_dashboard.jsx";
-import Queue_Manage from "./pages/administrator/Queue_Management.jsx";
-import Server_manage from "./pages/administrator/Server_Management.jsx";
-import Report from "./pages/administrator/Admin_Report.jsx";
+import AdminDashboard from "./pages/administrator/AdminDashboard.jsx";
+import QueueManagement from "./pages/administrator/QueueManagement.jsx";
+import ServiceManagement from "./pages/administrator/ServiceManagement.jsx";
+import AdminReport from "./pages/administrator/AdminReport.jsx";
 
 export default function App() {
   return (
     <Routes>
+      {/* Keep public URLs lowercase and hyphenated for consistency. */}
       <Route path="/" element={<Login />} />
       <Route path="/login" element={<Login />} />
       <Route path="/register" element={<Register />} />
@@ -24,34 +25,34 @@ export default function App() {
         }
       />
       <Route
-        path="/Admin_dashboard"
+        path="/admin-dashboard"
         element={
           <RequireAdmin>
-            <Admindashbord />
+            <AdminDashboard />
           </RequireAdmin>
         }
       />
       <Route
-        path="/Queue_Management"
+        path="/queue-management"
         element={
           <RequireAdmin>
-            <Queue_Manage />
+            <QueueManagement />
           </RequireAdmin>
         }
       />
       <Route
-        path="/Server_management"
+        path="/service-management"
         element={
           <RequireAdmin>
-            <Server_manage />
+            <ServiceManagement />
           </RequireAdmin>
         }
       />
       <Route
-        path="/Admin_Report"
+        path="/admin-report"
         element={
           <RequireAdmin>
-            <Report />
+            <AdminReport />
           </RequireAdmin>
         }
       />

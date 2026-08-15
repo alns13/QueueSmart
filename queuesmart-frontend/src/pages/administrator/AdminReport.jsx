@@ -13,7 +13,7 @@ import {
   ResponsiveContainer,
   LabelList,
 } from "recharts";
-import "./Admin_dashboard.css";
+import "./admin-dashboard.css";
 
 function AdminReport(){
     const [report, setReport] = useState({
