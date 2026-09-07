@@ -1,7 +1,5 @@
 # QueueSmart
 
-COSC 4353 Class Project
-
 ---
 
 ## Quickstart Guide
